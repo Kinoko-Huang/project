@@ -1,0 +1,86 @@
+#!/bin/csh -f
+
+#
+#   This is a sample runscript to convert CMAQ ICON files to CAMx IC 
+#   and TopC files.
+#   Set the following file names and run the script:
+#
+#   INPUT_CMAQ_ICON  - CMAQ ICON file name (input)
+#   OUTPUT_CAMx_IC   - CAMx IC file name (output)
+#   OUTPUT_CAMx_TopC - CAMx Top Concentration file name (output)
+#   SPECIES_MAPPING  - Species Mapping Table file name (input)
+#
+rm -f ../msg/log.ic.cmaq2uam.*.27km
+rm -f ../msg/log.ic.spcmap.*.27km
+
+set JDATE = $argv[1]
+
+set MM = `$CAMx_HOME/datelib/j2g $JDATE | awk '{print $2}'`
+####### ICON is seasonal change, choose season ########
+
+set YYYY1 = 2006
+
+if ( $MM == 12 |$MM == 01 | $MM == 02) then
+  set MM1 = 01
+  set INPUT_CMAQ_ICON = $CMAQ_ICBC/$YYYY1$MM1/ICON_COMBINE_2006002
+else if ( $MM == 03 | $MM == 04 | $MM == 05 ) then
+  set MM1 = 04
+  set INPUT_CMAQ_ICON = $CMAQ_ICBC/$YYYY1$MM1/ICON_COMBINE_2006091
+else if ( $MM == 06 | $MM == 07 | $MM == 08 ) then
+  set MM1 = 07
+  set INPUT_CMAQ_ICON = $CMAQ_ICBC/$YYYY1$MM1/ICON_COMBINE_2006182
+else if ( $MM == 09 | $MM == 10 | $MM == 11 ) then
+  set MM1 = 10
+  set INPUT_CMAQ_ICON = $CMAQ_ICBC/$YYYY1$MM1/ICON_COMBINE_2006274
+endif
+
+set OUTPUT_CAMx_IC   = $CAMx_HOME/inputs/icbc/icon.camx.27km.$JDATE.bin
+set OUTPUT_CAMx_TopC = $CAMx_HOME/inputs/icbc/topc.camx.ascii
+set SPECIES_MAPPING  = ./Species_Mapping_Tables/MAPTBL.CAMx4.5_CB05_CF.CMAQ_CB05_AE3_ICBC
+
+######################################################################
+#
+#   SPCMAP creates a new I/O-API file with new variables each of which
+#   is a linear combination of variables from the input I/O-API file.
+#   Units of the new variables are user-defined.
+#
+#   INFILE    - file name for input file
+#   OUTFILE   - file name for output file
+#   MAPTBL    - file name for species mapping table
+#
+######################################################################
+setenv INFILE  $INPUT_CMAQ_ICON
+setenv OUTFILE tmp_icon
+setenv MAPTBL  $SPECIES_MAPPING
+rm -f $OUTFILE
+
+../src/spcmap >& ../msg/log.ic.spcmap.$JDATE.27km
+
+######################################################################
+#
+#   CMAQ2UAM converts CMAQ input files (I/O-API) into corresponding
+#   CAMx input files (UAM-IV format). It only converts file formats
+#   and units if needed. No species mapping.
+#
+#   CMAQICON        - file name for CMAQ IC input
+#   CMAQBCON        - file name for CMAQ BC input
+#   CMAQEMIS        - file name for CMAQ Emissions input
+#
+#   File Type       - input file type (ICON, BCON, or EMIS)
+#   OutFile1        - first output file name (CAMx IC, BC, or AR)
+#   OutFile2        - second output file name (CAMx TopC or PT)
+#   Output Timezone - timezone for output (8 for PST, etc.)
+#
+######################################################################
+setenv CMAQICON tmp_icon
+rm -f $OUTPUT_CAMx_IC $OUTPUT_CAMx_TopC
+
+../src/cmaq2uam << EOF >& ../msg/log.ic.cmaq2uam.$JDATE.27km
+File Type          |ICON
+OutFile1 (IC,BC,AR)|$OUTPUT_CAMx_IC
+OutFile2 (TopC,PT) |$OUTPUT_CAMx_TopC
+Output Timezone    |0
+EOF
+
+rm -f tmp_icon
+

@@ -1,0 +1,77 @@
+#!/bin/csh -v
+
+source ../../domains_def.config
+
+set CASE_root = $argv[1]
+
+#foreach dom (27 9 3 1 )
+set GRID = 1
+foreach DOMAINS_RES ( ${G_DOMAINS_RES} )
+
+set dom = ${DOMAINS_RES}  #27 9 3 1
+set XORIG_CRO = `expr ${XCRO_AQMS_Dx[$GRID]} \* 1000`
+set YORIG_CRO = `expr ${YCRO_AQMS_Dx[$GRID]} \* 1000`
+set XORIG_DOT = `expr ${XDOT_AQMS_Dx[$GRID]} \* 1000`
+set YORIG_DOT = `expr ${YDOT_AQMS_Dx[$GRID]} \* 1000`
+set XCELL     = ${dom}000
+set YCELL     = ${dom}000
+
+##set METPATH = "/disk40/hongkong/cmaq/inputs/met/wrf/${dom}km"
+set METPATH = ${CASE_root}/${dom}
+set edhdr_root = . 
+
+#
+##set LCP params for CRO+BDY files
+#
+foreach type (GRIDBDY2D GRIDCRO2D METBDY3D METCRO2D METCRO3D)
+foreach f ($METPATH/${type}.${dom}km.????????) 
+
+setenv INFILE $f 
+
+${edhdr_root}/m3edhdr << EOF
+INFILE
+1
+15
+40
+114
+114
+28.5
+2
+$XORIG_CRO
+$YORIG_CRO
+$XCELL
+$YCELL
+10
+EOF
+
+end
+end
+
+#
+##set LCP params for DOT files
+#
+foreach type (GRIDDOT2D METDOT3D)
+foreach f ($METPATH/${type}.${dom}km.????????) 
+
+setenv INFILE $f 
+
+${edhdr_root}/m3edhdr << EOF
+INFILE
+1
+15
+40
+114
+114
+28.5
+2
+$XORIG_DOT
+$YORIG_DOT
+$XCELL
+$YCELL
+10
+EOF
+
+end
+end
+@ GRID ++
+end

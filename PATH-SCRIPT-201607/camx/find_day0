@@ -1,0 +1,67 @@
+#!/bin/sh
+#
+# Search CAMx output data for day0 and link the data files to $DATA_CAMX_OUTPUT directory
+#
+if [ $# -eq 1 ]; then
+  INIT_TIME=$1
+else
+  echo "Usage: $0 YYYYMMDDhh"
+  exit 1
+fi
+
+PATH_SYSDIR=${PATH_SYSDIR-/home/pathsys}
+DATA_CAMX_OUTPUT=${DATA_CAMX_OUTPUT-/home/pathop/data/camx}
+#DATA_CAMX_OUTPUT=${DATA_CAMX_OUTPUT-/home/pathop/hq31/camx_test_data/camx}
+
+Output1_init_time=`/bin/date -d "${INIT_TIME:0:8} ${INIT_TIME:8:2}:00:00 1 day  ago" +%Y%m%d%H`
+Output2_init_time=`/bin/date -d "${INIT_TIME:0:8} ${INIT_TIME:8:2}:00:00 2 days ago" +%Y%m%d%H`
+Output3_init_time=`/bin/date -d "${INIT_TIME:0:8} ${INIT_TIME:8:2}:00:00 3 days ago" +%Y%m%d%H`
+
+echo "find0: Original INIT_TIME = $INIT_TIME"
+if [ $FC_MODE -eq 1 ]; then
+  nday=1
+else
+  nday=0
+fi
+
+INIT_DATE=`$PATH_SYSDIR/bin/ymd_prev ${INIT_TIME:0:8} $nday` || exit 1
+INIT_TIME=${INIT_DATE}${INIT_TIME:8:2}
+echo "find0: New      INIT_TIME = $INIT_TIME"
+
+for Output_init_time in $Output1_init_time $Output2_init_time $Output3_init_time
+do
+  OutputDir=${DATA_CAMX_OUTPUT}/${Output_init_time:0:4}/${Output_init_time:0:6}/${Output_init_time}
+  if [ ! -e $OutputDir ]; then
+    echo "Output directory ${OutputDir} does not exist"
+    continue
+  fi
+  km=1
+  for DOMAINS_RES in $G_DOMAINS_RES_gov
+  do
+    files=/usr/bin/find $OutputDir/HKPATH.$km
+    if [ -z "$files" ]; then
+      echo "No valil CAMx5.4.HKPATH...${Output_init_time:0:8}... found in $OutputDir"
+      continue
+    fi
+    CAMx_output_dir=outputs/HKPATH.$km
+    if [ ! -d $CAMx_output_dir ]; then
+      /bin/mkdir -p $CAMx_output_dir || {
+        echo "Failed to create $CAMx_output_dir directory"
+        exit 1
+      }
+    fi
+    if [ -z "$files" ]; then
+      echo "Init files for HKPATH.$km is empty"
+      exit 1
+    fi
+    echo /bin/ln -sf $files $CAMx_output_dir/
+    /bin/ln -sf $a $CAMx_output_dir/ || {
+      echo "Failed to link file $files to $CAMx_output_dir"
+      exit 1
+    }
+    km=$[km+1]
+  done #done of km
+  exit 0
+done #done of Output_init_time
+echo "No valid output found for day0 = $INIT_TIME"
+exit 2

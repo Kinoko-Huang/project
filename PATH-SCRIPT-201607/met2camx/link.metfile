@@ -1,0 +1,75 @@
+#!/bin/sh
+##
+##
+############# Link the MM5 files here ################## 
+##
+if [ $# -eq 4 ]; then
+  JULBDATE=$1
+  JULEDATE=$2
+  INITHOUR=$3
+  METDATA=$4
+else
+  echo "Usage: $0 JULBDATE JULEDATE MET_directory Initial_hour"
+  echo " e.g.: $0 2004251 2004253 /home/dataop/data/nmodel/path_mm5_hist 12"
+  exit 1
+fi
+
+MYNAME=`/bin/basename $0`
+
+if [ "$MYNAME" = "link.mm5file" ]; then
+  Prefix=mm5out
+elif [ "$MYNAME" = "link.wrffile" ]; then
+  Prefix=wrfout
+else
+  echo "Invalid program name $MYNAME, must be link.mm5file or link.wrffile"
+  exit 1
+fi
+
+if [ "$INITHOUR" != "00" -a "$INITHOUR" != "12" ]; then
+  echo "Invalid initial hour $INITHOUR, it must be 00 or 12"
+  exit 1
+fi
+
+BDATE=( `./j2g ${JULBDATE}` )
+YMDh=${BDATE[0]}${BDATE[1]}${BDATE[2]}${INITHOUR}
+
+# Get the MM5/WRF data directory, which is $CTM_SKIP_N_DAYS earlier than CTM initial time
+#
+MET_YMDh=`/bin/date -d "${YMDh:0:8} ${YMDh:8:2}:00:00 $CTM_SKIP_N_DAYS days ago" +%Y%m%d%H`
+METDir=${METDATA}/${MET_YMDh:0:4}/${MET_YMDh:0:6}/${MET_YMDh}
+if [ ! -e $METDir ]; then
+  echo "Input Direcotry $METDir does not exist"
+  exit 1
+fi
+
+echo Input data directory $METDir
+
+d=( `./j2g ${JULBDATE}` )
+CTM_YMDh0=${d[0]}${d[1]}${d[2]}${INITHOUR}
+
+d=( `./j2g ${JULEDATE}` )
+CTM_YMDh1=${d[0]}${d[1]}${d[2]}${INITHOUR}
+
+echo "${MYNAME}: Linked file time period ${CTM_YMDh0} - ${CTM_YMDh1}"
+
+dt=$CTM_YMDh0
+while [ $dt -le $CTM_YMDh1 ]
+do
+  GRID=1
+  for DOMAINS_RES in $G_DOMAINS_RES_gov
+  do
+    SourceFile="$METDir/${Prefix}_d0${GRID}_${dt:0:4}-${dt:4:2}-${dt:6:2}_${dt:8:2}:00:00"
+    [ -f $SourceFile ] || {
+      echo "${MYNAME}: Linked file $SourceFile does not exist"
+      exit 1
+    }
+    /bin/ln -sf $SourceFile . || {
+      echo "Failed to run /bin/ln -sf $SourceFile . in `/bin/pwd`"
+      exit 1
+    }
+    GRID=$[GRID+1]
+  done
+  dt=`/bin/date -d "${dt:0:8} ${dt:8:2}:00:00 1 hour" +%Y%m%d%H`
+done
+
+exit 0

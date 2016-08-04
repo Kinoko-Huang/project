@@ -21,47 +21,53 @@ echo $JULBDATE $JULEDATE
 ##### Run the convert program #####
 ###### Prepare icbc for CAMx #####
 ## Convert form CMAQ ###
-#  cd $CMAQ2CAMx/work
-#    csh -f conv_bcon_op.job $JULBDATE $JULEDATE
-#    if ( $status != 0) then
-#      echo "ERROR: Run conv_bcon_op.job failed"
-#      echo "ERROR in step 1.2 CMAQBC2CAMx "
-#      goto error
-#    else
-#      echo "end step 1.2 CMAQBC2CAMx"
-#    endif
-#    csh -f conv_icon_op.job $JULBDATE 
-#    if ( $status != 0) then
-#      echo "ERROR: Run conv_icon_op.job failed"
-#      echo "ERROR in step 1.3 CMAQIC2CAMx "
-#      goto error
-#    else
-#      echo "end step 1.3 CMAQIC2CAMx"
-#    endif
+  cd $CMAQ2CAMx/work
+    csh -f conv_bcon_op.job $JULBDATE $JULEDATE
+    if ( $status != 0) then
+      echo "ERROR: Run conv_bcon_op.job failed"
+      echo "ERROR in step 1.2 CMAQBC2CAMx "
+      goto error
+    else
+      echo "end step 1.2 CMAQBC2CAMx"
+    endif
+    csh -f conv_icon_op.job $JULBDATE 
+    if ( $status != 0) then
+      echo "ERROR: Run conv_icon_op.job failed"
+      echo "ERROR in step 1.3 CMAQIC2CAMx "
+      goto error
+    else
+      echo "end step 1.3 CMAQIC2CAMx"
+    endif
+
+##### Step 2 Prepare ahomap file for CAMx #########
+  cd $AHOMAP/work
+  set GRID = 1
+  foreach DOMAINS_RES ($G_DOMAINS_RES)
+    csh -f $AHOMAP/work/ahomap.hk${HH}z.job $JULBDATE $JULEDATE $GRID $DOMAINS_RES
+    @ GRID ++
+  end
+  if ( $status != 0) then
+    echo "ERROR: Run ahomap.hk${HH}z.*.job failed"
+    echo "ERROR in step 3 AHOMAP"
+    goto error
+  else
+    echo "end step 3 AHOMAP"
+  endif
 #
-###### Step 2 Prepare ahomap file for CAMx #########
-#  cd $AHOMAP/work
-#  csh -f $AHOMAP/work/ahomap.hk${HH}z.job $JULBDATE $JULEDATE
-#  if ( $status != 0) then
-#    echo "ERROR: Run ahomap.hk${HH}z.*.job failed"
-#    echo "ERROR in step 3 AHOMAP"
-#    goto error
-#  else
-#    echo "end step 3 AHOMAP"
-#  endif
-##
-###### Step 3 Prepare tuv file for CAMx ############
-#
-#  cd $TUV
-#  csh -f tuv4.0_1.hkpath.job   $JULBDATE $JULEDATE
-#  if ( $status != 0) then
-#    echo "ERROR: Run tuv4.0_1.hkpath.*.job failed"
-#    echo "ERROR in step 4 TUV"
-#    goto error
-#  else
-#    echo "end step 4 TUV"
-#  endif
-#### Step 4 Run CAMx of 27km ##################
+##### Step 3 Prepare tuv file for CAMx ############
+
+  cd $TUV
+  foreach DOMAINS_RES ($G_DOMAINS_RES)
+    csh -f tuv4.0_1.hkpath.job   $JULBDATE $JULEDATE $DOMAINS_RES
+  end
+  if ( $status != 0) then
+    echo "ERROR: Run tuv4.0_1.hkpath.*.job failed"
+    echo "ERROR in step 4 TUV"
+    goto error
+  else
+    echo "end step 4 TUV"
+  endif
+### Step 4 Run CAMx of 27km ##################
   cd $CAMx_HOME/runfiles
     csh -f Runall.CAMx_v5.40.hkpath.MPI.csh $JULBDATE $JULEDATE 
     if ( $status != 0) then

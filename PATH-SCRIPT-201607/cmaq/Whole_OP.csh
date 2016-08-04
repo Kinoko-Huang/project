@@ -371,27 +371,13 @@ cd $OPDIR
 ########RUN CMAQ ON NESTING DOMAINS################
 echo RUN CMAQ ON NESTING DOMAINS
 set IDATE = $JULIBEGN
-set GRID = 1
 while ( "$IDATE" <= "$JULILAST" )
   setenv IGREG `$UTILDIR/datelib/yyyyjjj2yyyymmdd $IDATE`
+  set GRID = 1
   foreach DMAIN ( $G_DOMAINS_RES )  
-  setenv MIDNAME hk${DMAIN}
-#  switch ( $DMAIN )
-#    case 27km
-#      setenv MIDNAME hk27
-#      breaksw
-#    case 9km
-#      setenv MIDNAME hk9
-#      breaksw
-#    case 3km
-#      setenv MIDNAME hk3
-#      breaksw
-#    case 1km
-#      setenv MIDNAME hk1
-#      breaksw
-#    endsw
-#
+    setenv MIDNAME hk${DMAIN}
     echo NOW IS RUNNING BCON ON ${DMAIN}km at $IDATE ...
+
     # run bcon
     if ( "$GRID" != "1" ) then
       cd $OPDIR/preproc/bcon
@@ -417,47 +403,47 @@ while ( "$IDATE" <= "$JULILAST" )
     echo NOW IS RUNNING CCTM ON ${DMAIN}km at $IDATE ...
     cd $OPDIR
     # run cmaq
-    if ( $GRID == 1 ) then
-      cd $OPDIR/runfiles/first_grid
-      if ( $CTM_COLD_START == 1 && "$IDATE" == "$JULIBEGN" ) then
-        echo "CMAQ cold start domain = ${DMAIN}km and date = $JULIBEGN"
-        echo Run ./run.OP.$MIDNAME.mpich2_cold $IDATE $ICON_path $ICON_file
-        ./run.OP.$MIDNAME.mpich2_cold $IDATE $ICON_path $ICON_file
-        if ( $status != 0 ) then
-          echo Failed: ./run.OP.$MIDNAME.mpich2_cold $IDATE $ICON_path $ICON_file
-          exit 1
-        endif
-      else
-        echo Run ./run.OP.$MIDNAME.mpich2 $IDATE
-        ./run.OP.$MIDNAME.mpich2 $IDATE
-        if ( $status != 0 ) then
-          echo Failed: ./run.OP.$MIDNAME.mpich2 $IDATE
-          exit 1
-        endif
+#    if ( $GRID == 1 ) then
+    cd $OPDIR/runfiles/runfiles
+    if ( $CTM_COLD_START == 1 && "$IDATE" == "$JULIBEGN" ) then
+      echo "CMAQ cold start domain = ${DMAIN}km and date = $JULIBEGN"
+      echo Run ./run.OP.$MIDNAME.mpich2_cold $IDATE $ICON_path $ICON_file
+      ./run.OP.$MIDNAME.mpich2_cold $IDATE $ICON_path $ICON_file $GRID
+      if ( $status != 0 ) then
+        echo Failed: ./run.OP.$MIDNAME.mpich2_cold $IDATE $ICON_path $ICON_file
+        exit 1
       endif
     else
-       cd $OPDIR/runfiles/refined_grid
-        if ( $CTM_COLD_START == 1 && "$IDATE" == "$JULIBEGN" ) then
-          echo "CMAQ cold start domain = ${DMAIN}km and date = $JULIBEGN"
-          ./run.OP.mpich2_cold $IDATE $DMAIN
-          if ( $status != 0 ) then
-            echo Failed: ./run.OP.mpich2_cold $IDATE ${DMAIN}km
-            exit 1
-          endif
-        else
-          echo Run ./run.OP.mpich2 $IDATE ${DMAIN}km
-          ./run.OP.mpich2 $IDATE $DMAIN
-          if ( $status != 0 ) then
-            echo Failed: ./run.OP.mpich2 $IDATE ${DMAIN}km
-            exit 1
-          endif
-        endif
+      echo Run ./run.OP.$MIDNAME.mpich2 $IDATE
+      ./run.OP.$MIDNAME.mpich2 $IDATE $GRID
+      if ( $status != 0 ) then
+        echo Failed: ./run.OP.$MIDNAME.mpich2 $IDATE
+        exit 1
+      endif
     endif
+#    else
+#       cd $OPDIR/runfiles/refined_grid
+#        if ( $CTM_COLD_START == 1 && "$IDATE" == "$JULIBEGN" ) then
+#          echo "CMAQ cold start domain = ${DMAIN}km and date = $JULIBEGN"
+#          ./run.OP.mpich2_cold $IDATE $DMAIN
+#          if ( $status != 0 ) then
+#            echo Failed: ./run.OP.mpich2_cold $IDATE ${DMAIN}km
+#            exit 1
+#          endif
+#        else
+#          echo Run ./run.OP.mpich2 $IDATE ${DMAIN}km
+#          ./run.OP.mpich2 $IDATE $DMAIN
+#          if ( $status != 0 ) then
+#            echo Failed: ./run.OP.mpich2 $IDATE ${DMAIN}km
+#            exit 1
+#          endif
+#        endif
+#    endif
     @ GRID ++
     end  # foreach DMAIN
     #@ IDATE++
     set IDATE = `$PATH_SYSDIR/bin/yj_next $IDATE 1`
-  end 
+  end #end of while 
   
 ########AT THE VERY END############################
 cd $OPDIR

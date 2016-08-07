@@ -10,12 +10,15 @@
 #   OUTPUT_CAMx_TopC - CAMx Top Concentration file name (output)
 #   SPECIES_MAPPING  - Species Mapping Table file name (input)
 #
-rm -f ../msg/log.ic.cmaq2uam.*.27km
-rm -f ../msg/log.ic.spcmap.*.27km
+source ../../../../domains_def.config
+set DOMAINS_RES = ${G_DOMAINS_RES[1]}
 
-set JDATE = $argv[1]
+rm -f ../msg/log.ic.cmaq2uam.*.${DOMAINS_RES}km
+rm -f ../msg/log.ic.spcmap.*.${DOMAINS_RES}km
 
-set MM = `$CAMx_HOME/datelib/j2g $JDATE | awk '{print $2}'`
+set BEG_JDATE = $argv[1]
+
+set MM = `$CAMx_HOME/datelib/j2g $BEG_JDATE | awk '{print $2}'`
 ####### ICON is seasonal change, choose season ########
 
 set YYYY1 = 2006
@@ -34,7 +37,7 @@ else if ( $MM == 09 | $MM == 10 | $MM == 11 ) then
   set INPUT_CMAQ_ICON = $CMAQ_ICBC/$YYYY1$MM1/ICON_COMBINE_2006274
 endif
 
-set OUTPUT_CAMx_IC   = $CAMx_HOME/inputs/icbc/icon.camx.27km.$JDATE.bin
+set OUTPUT_CAMx_IC   = $CAMx_HOME/inputs/icbc/icon.camx.${DOMAINS_RES}km.$BEG_JDATE.bin
 set OUTPUT_CAMx_TopC = $CAMx_HOME/inputs/icbc/topc.camx.ascii
 set SPECIES_MAPPING  = ./Species_Mapping_Tables/MAPTBL.CAMx4.5_CB05_CF.CMAQ_CB05_AE3_ICBC
 
@@ -54,7 +57,7 @@ setenv OUTFILE tmp_icon
 setenv MAPTBL  $SPECIES_MAPPING
 rm -f $OUTFILE
 
-../src/spcmap >& ../msg/log.ic.spcmap.$JDATE.27km
+../src/spcmap >& ../msg/log.ic.spcmap.$BEG_JDATE.${DOMAINS_RES}km
 
 ######################################################################
 #
@@ -75,7 +78,7 @@ rm -f $OUTFILE
 setenv CMAQICON tmp_icon
 rm -f $OUTPUT_CAMx_IC $OUTPUT_CAMx_TopC
 
-../src/cmaq2uam << EOF >& ../msg/log.ic.cmaq2uam.$JDATE.27km
+../src/cmaq2uam << EOF >& ../msg/log.ic.cmaq2uam.$BEG_JDATE.${DOMAINS_RES}km
 File Type          |ICON
 OutFile1 (IC,BC,AR)|$OUTPUT_CAMx_IC
 OutFile2 (TopC,PT) |$OUTPUT_CAMx_TopC

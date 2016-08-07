@@ -35,15 +35,15 @@ do
     echo "Output directory ${OutputDir} does not exist"
     continue
   fi
-  km=1
+  DOMAINS_GRID=1
   for DOMAINS_RES in $G_DOMAINS_RES_gov
   do
-    files=/usr/bin/find $OutputDir/HKPATH.$km
+    files=/usr/bin/find $OutputDir/HKPATH.$DOMAINS_GRID
     if [ -z "$files" ]; then
       echo "No valil CAMx5.4.HKPATH...${Output_init_time:0:8}... found in $OutputDir"
       continue
     fi
-    CAMx_output_dir=outputs/HKPATH.$km
+    CAMx_output_dir=outputs/HKPATH.$DOMAINS_GRID
     if [ ! -d $CAMx_output_dir ]; then
       /bin/mkdir -p $CAMx_output_dir || {
         echo "Failed to create $CAMx_output_dir directory"
@@ -51,7 +51,7 @@ do
       }
     fi
     if [ -z "$files" ]; then
-      echo "Init files for HKPATH.$km is empty"
+      echo "Init files for HKPATH.$DOMAINS_GRID is empty"
       exit 1
     fi
     echo /bin/ln -sf $files $CAMx_output_dir/
@@ -59,8 +59,8 @@ do
       echo "Failed to link file $files to $CAMx_output_dir"
       exit 1
     }
-    km=$[km+1]
-  done #done of km
+    DOMAINS_GRID=$[DOMAINS_GRID+1]
+  done #done of DOMAINS_GRID
   exit 0
 done #done of Output_init_time
 echo "No valid output found for day0 = $INIT_TIME"

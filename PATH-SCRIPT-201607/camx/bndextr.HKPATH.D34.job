@@ -19,50 +19,50 @@
 
 source ../../../domains_def.config
 
-set BDATE = $argv[2] #The initial day for this simulation
-set JDATE = $argv[1] #Current simulation day
-set GRID = $argv[3]
+set BEG_JDATE = $argv[2] #The initial day for this simulation
+set CUR_JDATE = $argv[1] #Current simulation day
+set DOMAINS_GRID = $argv[3]
 set DOMAINS_RES = $argv[4]
 
-@ GRID_COARSE = $GRID - 1
+@ GRID_COARSE = $DOMAINS_GRID - 1
 set CAMxDir = $CAMx_HOME/inputs/icbc
 
-echo $JDATE $BDATE 'BCfile'
+echo $CUR_JDATE $BEG_JDATE 'BCfile'
 
 rm -f msg/camx.${DOMAINS_RES}km.*.diag1
 rm -f msg/camx.${DOMAINS_RES}km.*.diag2
 rm -f msg/log.bndexr.${DOMAINS_RES}.*
-rm -f $CAMxDir/bc.camx.${DOMAINS_RES}km.$JDATE.uam
-rm -f $CAMxDir/icon.camx.${DOMAINS_RES}km.$BDATE.bin
+rm -f $CAMxDir/bc.camx.${DOMAINS_RES}km.$CUR_JDATE.uam
+rm -f $CAMxDir/icon.camx.${DOMAINS_RES}km.$BEG_JDATE.bin
 
 set ic = "F"
-if ( $JDATE == $BDATE ) then
+if ( $CUR_JDATE == $BEG_JDATE ) then
   set ic = "T"
 endif
 
-set YYYY = `$CAMx_HOME/datelib/j2g $JDATE | awk '{print $1}'`
-set MM   = `$CAMx_HOME/datelib/j2g $JDATE | awk '{print $2}'`
-set DD   = `$CAMx_HOME/datelib/j2g $JDATE | awk '{print $3}'`
-set dy   = `echo $JDATE |cut -c 3-7`
+set YYYY = `$CAMx_HOME/datelib/j2g $CUR_JDATE | awk '{print $1}'`
+set MM   = `$CAMx_HOME/datelib/j2g $CUR_JDATE | awk '{print $2}'`
+set DD   = `$CAMx_HOME/datelib/j2g $CUR_JDATE | awk '{print $3}'`
+set dy   = `echo $CUR_JDATE |cut -c 3-7`
+set CUR_GDATE = $YYYY$MM$DD
 
-set iwest = ${IWEST_AQMS_Dx[$GRID]}
-set ieast = ${IEAST_AQMS_Dx[$GRID]}
-set jsouth = ${JSOUTH_AQMS_Dx[$GRID]}
-set jnorth = ${JNORTH_AQMS_Dx[$GRID]}
-set reso = $DOMAINS_RES
+set iwest = ${IWEST_AQMS_Dx[$DOMAINS_GRID]}
+set ieast = ${IEAST_AQMS_Dx[$DOMAINS_GRID]}
+set jsouth = ${JSOUTH_AQMS_Dx[$DOMAINS_GRID]}
+set jnorth = ${JNORTH_AQMS_Dx[$DOMAINS_GRID]}
 set RUN = HKPATH.${G_DOMAINS_RES[$GRID_COARSE]}
-ln -fs $CAMxOUT/$RUN/CAMx5.4.$RUN.$YYYY$MM$DD.avrg.grd01 CAMx5.4.$RUN.$YYYY$MM$DD.avrg
+ln -fs $CAMxOUT/$RUN/CAMx5.4.$RUN.$CUR_GDATE.avrg.grd01 CAMx5.4.$RUN.$CUR_GDATE.avrg
 
-./bndextr.linux << EOF >& ./msg/log.bndexr.${reso}.$JDATE
-input average file |CAMx5.4.$RUN.$YYYY$MM$DD.avrg
-output BC file     |$CAMxDir/bc.camx.${reso}km.$JDATE.uam
+./bndextr.linux << EOF >& ./msg/log.bndexr.${DOMAINS_RES}.$CUR_JDATE
+input average file |CAMx5.4.$RUN.$CUR_GDATE.avrg
+output BC file     |$CAMxDir/bc.camx.${DOMAINS_RES}km.$CUR_JDATE.uam
 iwst,iest,jsth,jnth|$iwest,$ieast,$jsouth,$jnorth
 mesh factor        |3
 make IC file?      |$ic
 time/date for IC   |${HH}  $dy
-output IC file     |$CAMxDir/icon.camx.${reso}km.${BDATE}.bin
-diagnostic file #1 |msg/camx.${reso}km.$JDATE.diag1
-diagnostic file #2 |msg/camx.${reso}km.$JDATE.diag2
+output IC file     |$CAMxDir/icon.camx.${DOMAINS_RES}km.${BEG_JDATE}.bin
+diagnostic file #1 |msg/camx.${DOMAINS_RES}km.$CUR_JDATE.diag1
+diagnostic file #2 |msg/camx.${DOMAINS_RES}km.$CUR_JDATE.diag2
 EOF
 
 

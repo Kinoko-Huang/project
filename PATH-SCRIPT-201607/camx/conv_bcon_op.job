@@ -1,5 +1,4 @@
 #!/bin/csh -f
-
 #
 #   This is a sample runscript to convert CMAQ BCON files to CAMx BC 
 #   files.
@@ -9,21 +8,23 @@
 #   OUTPUT_CAMx_BC   - CAMx BC file name (output)
 #   SPECIES_MAPPING  - Species Mapping Table file name (input)
 #
+source ../../../../domains_def.config
 
-set BDATE = $argv[1]
-set EDATE = $argv[2]
-set JDATE = $BDATE
+set BEG_JDATE = $argv[1]
+set END_JDATE = $argv[2]
+set CUR_JDATE = $BEG_JDATE
+set DOMAINS_RES = ${G_DOMAINS_RES[1]}
 
-rm -f ../msg/log.bc.spcmap.*.27km
-rm -f ../msg/log.bc.cmaq2uam.*.27km
+rm -f ../msg/log.bc.spcmap.*.${DOMAINS_RES}km
+rm -f ../msg/log.bc.cmaq2uam.*.${DOMAINS_RES}km
 rm -f ../msg/log.m3tshift.bc.*
 rm -f ../Output/ICBC/BCON_COMBINE_*
 
-while ( $JDATE <= $EDATE )
+while ( $CUR_JDATE <= $END_JDATE )
   
-  set YYYY = `$CAMx_HOME/datelib/j2g $JDATE | awk '{print $1}'`
-  set MM   = `$CAMx_HOME/datelib/j2g $JDATE | awk '{print $2}'`
-  set DD   = `$CAMx_HOME/datelib/j2g $JDATE | awk '{print $3}'`
+  set YYYY = `$CAMx_HOME/datelib/j2g $CUR_JDATE | awk '{print $1}'`
+  set MM   = `$CAMx_HOME/datelib/j2g $CUR_JDATE | awk '{print $2}'`
+  set DD   = `$CAMx_HOME/datelib/j2g $CUR_JDATE | awk '{print $3}'`
   set DOW  = `$CAMx_HOME/datelib/yyyymmdd2dow.7day.lnx $YYYY$MM$DD`
   ######### BCON is seasonal change, choose the season ###########
   if ( "$MM" == "12" | "$MM" == "01" | "$MM" == "02" ) then
@@ -152,10 +153,10 @@ while ( $JDATE <= $EDATE )
    endsw
 
   ######## Run m3tshift to change bc time ############
-  ./run.change_bc${HH}z_time.csh $JDATE $DATEDOW >& ../msg/log.m3tshift.bc.$JDATE
+  ./run.change_bc${HH}z_time.csh $CUR_JDATE $DATEDOW >& ../msg/log.m3tshift.bc.$CUR_JDATE
 
-  set INPUT_CMAQ_BCON  = $cwd/../Output/ICBC/BCON_COMBINE_$JDATE
-  set OUTPUT_CAMx_BC   = $CAMx_HOME/inputs/icbc/bc.camx.27km.$JDATE.uam
+  set INPUT_CMAQ_BCON  = $cwd/../Output/ICBC/BCON_COMBINE_$CUR_JDATE
+  set OUTPUT_CAMx_BC   = $CAMx_HOME/inputs/icbc/bc.camx.${DOMAINS_RES}km.$CUR_JDATE.uam
   set SPECIES_MAPPING  = ./Species_Mapping_Tables/MAPTBL.CAMx4.5_CB05_CF.CMAQ_CB05_AE3_ICBC
 
 ######################################################################
@@ -174,7 +175,7 @@ setenv OUTFILE tmp_bcon
 setenv MAPTBL  $SPECIES_MAPPING
 rm -f $OUTFILE
 
-../src/spcmap >& ../msg/log.bc.spcmap.$JDATE.27km
+../src/spcmap >& ../msg/log.bc.spcmap.$CUR_JDATE.${DOMAINS_RES}km
 
 ######################################################################
 #
@@ -202,7 +203,7 @@ rm -f $OUTPUT_CAMx_BC
 
 ###setenv BCON_INTRP T
 
-../src/cmaq2uam << EOF >& ../msg/log.bc.cmaq2uam.$JDATE.27km
+../src/cmaq2uam << EOF >& ../msg/log.bc.cmaq2uam.$CUR_JDATE.${DOMAINS_RES}km
 File Type          |BCON
 OutFile1 (IC,BC,AR)|$OUTPUT_CAMx_BC
 OutFile2 (TopC,PT) |
@@ -211,5 +212,6 @@ EOF
 
 rm -f tmp_bcon
 
-set JDATE = `$CAMx_HOME/datelib/yyyyjjj_plus_dd $JDATE 1`
+set CUR_JDATE = `$CAMx_HOME/datelib/yyyyjjj_plus_dd $CUR_JDATE 1`
+
 end

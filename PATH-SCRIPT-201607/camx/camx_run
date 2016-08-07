@@ -31,15 +31,15 @@ if [ "$DT" != "$INIT_TIME" ]; then
   exit 1
 fi
 
-GREBTIME=`/bin/date -d "${INIT_TIME:0:8} ${INIT_TIME:8:2}:00:00 $CTM_SKIP_N_DAYS days" +%Y%m%d%H`
+BEG_GTIME=`/bin/date -d "${INIT_TIME:0:8} ${INIT_TIME:8:2}:00:00 $CTM_SKIP_N_DAYS days" +%Y%m%d%H`
 let "ndays = CTM_SIM_N_DAYS - 1"
-GREETIME=`/bin/date -d "${GREBTIME:0:8} ${GREBTIME:8:2}:00:00 $ndays days" +%Y%m%d%H`
+END_GTIME=`/bin/date -d "${BEG_GTIME:0:8} ${BEG_GTIME:8:2}:00:00 $ndays days" +%Y%m%d%H`
 
-GREBDATE=${GREBTIME:0:8}
-GREEDATE=${GREETIME:0:8}
+BEG_GDATE=${BEG_GTIME:0:8}
+END_GDATE=${END_GTIME:0:8}
 
-$ECHO GREBDATE=$GREBDATE
-$ECHO GREEDATE=$GREEDATE
+$ECHO BEG_GDATE=$BEG_GDATE
+$ECHO END_GDATE=$END_GDATE
 
 export CAMxMET_INPUT
 
@@ -96,23 +96,23 @@ fi
 
 if [ $UseAveTOMs -eq 0 ]; then
   ##### Download TOMs data from ENVF server ##########
-  $PATH_SYSDIR/bin/get_envf_tom $GREBDATE $GREEDATE $MYDIR/Raw_DATA/TOMs
+  $PATH_SYSDIR/bin/get_envf_tom $BEG_GDATE $END_GDATE $MYDIR/Raw_DATA/TOMs
 else
   #### Use the average TOMs data #####################
-  d=$GREBDATE
-  while [ $d -le $GREEDATE ]
+  CUR_GDATE=$BEG_GDATE
+  while [ $CUR_GDATE -le $END_GDATE ]
   do
-    $ECHO ./copy_TOMs ${d}
-    ./copy_TOMs ${d} || {
-      $ECHO "Failed to run ./copy_TOMs ${d}"
+    $ECHO ./copy_TOMs ${CUR_GDATE}
+    ./copy_TOMs ${CUR_GDATE} || {
+      $ECHO "Failed to run ./copy_TOMs ${CUR_GDATE}"
       exit 1
     }
-    d=`/bin/date -d "$d 1 day" +%Y%m%d`
+    CUR_GDATE=`/bin/date -d "$CUR_GDATE 1 day" +%Y%m%d`
   done
   if [ "${INIT_TIME:8:2}" = "12" ]; then
-    $ECHO ./copy_TOMs ${d}
-    ./copy_TOMs ${d} || {
-      $ECHO "Failed to run ./copy_TOMs ${d}"
+    $ECHO ./copy_TOMs ${CUR_GDATE}
+    ./copy_TOMs ${CUR_GDATE} || {
+      $ECHO "Failed to run ./copy_TOMs ${CUR_GDATE}"
       exit 1
     }
   fi  
@@ -139,7 +139,6 @@ if [ $CTM_USE_SMOKE -eq 1 ]; then
     exit 1
   }
 fi
-
 
 if [ $CTM_COLD_START -eq 0 -a $CTM_CLEAN_OUTPUT -eq 1 ]; then
   ./find_day0 $INIT_TIME
@@ -172,12 +171,12 @@ $ECHO "No. of Processors = ${NProcs}"
 $PATH_SYSDIR/bin/start_mpd
 
 ##### Start CAMx ###################################
-$ECHO Run ./Runall.OP.csh $GREBTIME $GREETIME
-./Runall.OP.csh $GREBTIME $GREETIME || {
-  $ECHO "Failed to run ./Runall.OP.csh $GREBTIME $GREETIME"
-  $PATH_SYSDIR/bin/stop_mpd
-  exit 1
-}
+#$ECHO Run ./Runall.OP.csh $BEG_GTIME $END_GTIME
+#./Runall.OP.csh $BEG_GTIME $END_GTIME || {
+#  $ECHO "Failed to run ./Runall.OP.csh $BEG_GTIME $END_GTIME"
+#  $PATH_SYSDIR/bin/stop_mpd
+#  exit 1
+#}
 
 $PATH_SYSDIR/bin/stop_mpd
 

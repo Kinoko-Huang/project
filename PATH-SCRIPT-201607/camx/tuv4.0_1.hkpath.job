@@ -110,37 +110,36 @@
 #
 source ../../../domains_def.config
 
-foreach DOMAINS_RES ($G_DOMAINS_RES)
-
-set JULBDATE = $argv[1]
-set JULEDATE = $argv[2]
-set JULDATE = $JULBDATE
+set BEG_JDATE = $argv[1]
+set END_JDATE = $argv[2]
+set CUR_JDATE = $BEG_JDATE
+set DOMAINS_RES = $argv[3]
 
 rm -f msg/log.tuv.*.$DOMAINS_RES
 
-while ( $JULDATE <= $JULEDATE )
-set YYYY = `$CAMx_HOME/datelib/j2g $JULDATE | awk '{print $1}'`
-set MM   = `$CAMx_HOME/datelib/j2g $JULDATE | awk '{print $2}'`
-set DD   = `$CAMx_HOME/datelib/j2g $JULDATE | awk '{print $3}'`
+while ( $CUR_JDATE <= $END_JDATE )
+set YYYY = `$CAMx_HOME/datelib/j2g $CUR_JDATE | awk '{print $1}'`
+set MM   = `$CAMx_HOME/datelib/j2g $CUR_JDATE | awk '{print $2}'`
+set DD   = `$CAMx_HOME/datelib/j2g $CUR_JDATE | awk '{print $3}'`
 set YY   = `echo $YYYY | cut -c 3-4`
+set CUR_GDATE = $YYYY$MM$DD
+set CUR_GDATE_YY = $YY$MM$DD
 
 cat << EOF >& ./tuv.inp
-output file name   |$CAMx_HOME/inputs/tuv/tuv_hk.$YYYY$MM$DD.${DOMAINS_RES}km_CB05
-ahomap file name   |$CAMx_HOME/inputs/ahomap/ahomap.hk.$YYYY$MM$DD.${DOMAINS_RES}km
+output file name   |$CAMx_HOME/inputs/tuv/tuv_hk.$CUR_GDATE.${DOMAINS_RES}km_CB05
+ahomap file name   |$CAMx_HOME/inputs/ahomap/ahomap.hk.$CUR_GDATE.${DOMAINS_RES}km
 ozone, albedo, haze| 5, 5, 3
 # of vert levels   | 11
 levels, km agl     | 0. 0.15 0.35 0.60 1.00 2.00 3.00 4.00 6.00 8.00 10.0
-date (YYMMDD)      | $YY$MM$DD
+date (YYMMDD)      | $CUR_GDATE_YY
 rad transfer scheme| 1
 # of phot reactions| 19
 TUV reaction #s    | 100, 122, 121, 102, 101, 125, 89, 126, 127, 128, 129, 86, 91, 90, 85, 130, 84, 131, 70
 EOF
 
-./src/tuv.lnx >& msg/log.tuv.$YYYY$MM$DD.${DOMAINS_RES}
+./src/tuv.lnx >& msg/log.tuv.$CUR_GDATE.${DOMAINS_RES}
 
 rm ./tuv.inp
-set JULDATE = `$CAMx_HOME/datelib/yyyyjjj_plus_dd $JULDATE 1`
+set CUR_JDATE = `$CAMx_HOME/datelib/yyyyjjj_plus_dd $CUR_JDATE 1`
 
 end #end of while
-end #end of foreach DOMAINS_RES
-#

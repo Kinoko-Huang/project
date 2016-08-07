@@ -48,56 +48,51 @@
 #
 source ../../../../domains_def.config
 
-set GRID = 1
-foreach DOMAINS_RES ($G_DOMAINS_RES)
-
-set BDATE = $argv[1]
-set EDATE = $argv[2]
-set JDATE  = $BDATE
+set BEG_DATE = $argv[1]
+set END_DATE = $argv[2]
+set CUR_JDATE  = $BEG_DATE
+set DOMAINS_GRID = $argv[3]
+set DOMAINS_RES = $argv[4]
 
 rm -f ../msg/log.ahomap.*.${DOMAINS_RES}km
 
-while ( $JDATE <= $EDATE )
+while ( $CUR_JDATE <= $END_DATE )
 
-set YYYY   = `$CAMx_HOME/datelib/j2g $JDATE | awk '{print $1}'`
-set MM     = `$CAMx_HOME/datelib/j2g $JDATE | awk '{print $2}'`
-set DD     = `$CAMx_HOME/datelib/j2g $JDATE | awk '{print $3}'`
+set YYYY   = `$CAMx_HOME/datelib/j2g $CUR_JDATE | awk '{print $1}'`
+set MM     = `$CAMx_HOME/datelib/j2g $CUR_JDATE | awk '{print $2}'`
+set DD     = `$CAMx_HOME/datelib/j2g $CUR_JDATE | awk '{print $3}'`
 set YY     = `echo $YYYY | cut -c 3-4`
 
-set YYYYMMDD = $YYYY$MM$DD
-set YYMMDD = $YY$MM$DD
+set CUR_GDATE = $YYYY$MM$DD
+set CUR_GDATE_YY = $YY$MM$DD
 
-set YYYYMMDD1 = `$CAMx_HOME/datelib/ymd_next $YYYYMMDD`
-set YYMMDD1 = `echo $YYYYMMDD1 | cut -c 3-8`
+set TOM_GDATE = `$CAMx_HOME/datelib/ymd_next $CUR_GDATE`
+set TOM_GDATE_YY = `echo $TOM_GDATE | cut -c 3-8`
 
-ln -sf $CAMx_HOME/inputs/met/${DOMAINS_RES}/camx_lu.$YYYYMMDD.${DOMAINS_RES}km.bin camx_lu.$YYYYMMDD.${DOMAINS_RES}km.bin
-ln -sf $CAMx_HOME/Raw_DATA/TOMs/L3_ozone_omi_$YYYYMMDD.txt L3_ozone_omi_$YYYYMMDD.txt
-ln -sf $CAMx_HOME/Raw_DATA/TOMs/L3_ozone_omi_${YYYYMMDD1}.txt L3_ozone_omi_${YYYYMMDD1}.txt
+ln -sf $CAMx_HOME/inputs/met/${DOMAINS_RES}/camx_lu.$CUR_GDATE.${DOMAINS_RES}km.bin camx_lu.$CUR_GDATE.${DOMAINS_RES}km.bin
+ln -sf $CAMx_HOME/Raw_DATA/TOMs/L3_ozone_omi_$CUR_GDATE.txt L3_ozone_omi_$CUR_GDATE.txt
+ln -sf $CAMx_HOME/Raw_DATA/TOMs/L3_ozone_omi_${TOM_GDATE}.txt L3_ozone_omi_${TOM_GDATE}.txt
 
-
-$cwd/../src/ahomap.linux << EOF >& ../msg/log.ahomap.$JDATE.${DOMAINS_RES}km
+$cwd/../src/ahomap.linux << EOF >& ../msg/log.ahomap.$CUR_JDATE.${DOMAINS_RES}km
 Coordinate project |$MAP_PROJECTION
-xorg,yorg,izone    |${XCRO_AQMS_Dx[$GRID]},${YCRO_AQMS_Dx[$GRID]},$LAMBERT_CEN_LON,$LAMBERT_CEN_LAT,$LAMBERT_TRUE_LAT1,$LAMBERT_TRUE_LAT2
-dx,dy              |${DOMAINS_RES}.,${DOMAINS_RES}.
-Output filename    |ahomap.hk.${YYYYMMDD}.${DOMAINS_RES}km
+xorg,yorg,izone    |${XCRO_AQMS_Dx[$DOMAINS_GRID]},${YCRO_AQMS_Dx[$DOMAINS_GRID]},$LAMBERT_CEN_LON,$LAMBERT_CEN_LAT,$LAMBERT_TRUE_LAT1,$LAMBERT_TRUE_LAT1
+dx,dy              |${DOMAINS_RES},${DOMAINS_RES}
+Output filename    |ahomap.hk.${CUR_GDATE}.${DOMAINS_RES}km
 Process for snow?  |.false.
 Number of grids    |1
-Landuse filename   |camx_lu.$YYYYMMDD.${DOMAINS_RES}km.bin
-nx,ny              |182,138
+Landuse filename   |camx_lu.$CUR_GDATE.${DOMAINS_RES}km.bin
+nx,ny              |${NCOLS_AQMS_Dx[$DOMAINS_GRID]},${NROWS_AQMS_Dx[$DOMAINS_GRID]}
 Numbr of TOMS files|2
-Bday,Eday,TOMS file|$YYMMDD,$YYMMDD,L3_ozone_omi_$YYYYMMDD.txt
-Bday,Eday,TOMS file|$YYMMDD1,$YYMMDD1,L3_ozone_omi_$YYYYMMDD1.txt
+Bday,Eday,TOMS file|$CUR_GDATE_YY,$CUR_GDATE_YY,L3_ozone_omi_$CUR_GDATE.txt
+Bday,Eday,TOMS file|$TOM_GDATE_YY,$TOM_GDATE_YY,L3_ozone_omi_$TOM_GDATE.txt
 EOF
 
-rm -f camx_lu.$YYYYMMDD.${DOMAINS_RES}km.bin
-rm -f L3_ozone_omi_$YYYYMMDD.txt
-rm -f L3_ozone_omi_$YYYYMMDD1.txt
+rm -f camx_lu.$CUR_GDATE.${DOMAINS_RES}km.bin
+rm -f L3_ozone_omi_$CUR_GDATE.txt
+rm -f L3_ozone_omi_$TOM_GDATE.txt
 
+mv ahomap.hk.${CUR_GDATE}.${DOMAINS_RES}km $CAMx_HOME/inputs/ahomap
 
-mv ahomap.hk.${YYYYMMDD}.${DOMAINS_RES}km $CAMx_HOME/inputs/ahomap
+set CUR_JDATE = `$CAMx_HOME/datelib/yyyyjjj_plus_dd $CUR_JDATE 1`
 
-set JDATE = `$CAMx_HOME/datelib/yyyyjjj_plus_dd $JDATE 1`
-
-end #end of while
-@ GRID ++
-end #end of foreach DOMAINS_RES
+end

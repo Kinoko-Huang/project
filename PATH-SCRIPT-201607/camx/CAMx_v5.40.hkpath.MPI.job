@@ -6,10 +6,9 @@ source ../../domains_def.config
 
 set EXEC      = $CAMxExec
 
-set IJDAY = $argv[2]
-set BEGJDAY = $argv[1] #first day of simulation
-set ENDJDAY = $argv[1]
-set GRID = $argv[3]
+set BEG_JDATE = $argv[2]
+set CUR_JDATE = $argv[1] #first day of simulation
+set DOMAINS_GRID = $argv[3]
 set DOMAINS_RES = $argv[4]
 set DOMAINS_RES_D = `printf "%02d" $DOMAINS_RES`
 
@@ -34,71 +33,77 @@ else
 endif
 
 #  --- set the dates and times ----
-set JDATE = $BEGJDAY
-set IYMD   = `$CAMx_HOME/datelib/yyyyjjj2yyyymmdd $IJDAY`
-set IYMD_PREV = `$CAMx_HOME/datelib/ymd_prev $IYMD`
-
-@ PREV_DATE = `$CAMx_HOME/datelib/yyyyjjj_plus_dd $JDATE -1` 
-
-set YEAR = `$CAMx_HOME/datelib/j2g $JDATE | awk '{print $1}'`
-set MM   = `$CAMx_HOME/datelib/j2g $JDATE | awk '{print $2}'`
-set DD   = `$CAMx_HOME/datelib/j2g $JDATE | awk '{print $3}'`
+set BEG_GDATE   = `$CAMx_HOME/datelib/yyyyjjj2yyyymmdd $BEG_JDATE`
+set YES_BEG_GDATE = `$CAMx_HOME/datelib/ymd_prev $BEG_GDATE`
+echo "A"
+@ YES_JDATE = `$CAMx_HOME/datelib/yyyyjjj_plus_dd $CUR_JDATE -1` 
+echo "B"
+set YEAR = `$CAMx_HOME/datelib/j2g $CUR_JDATE | awk '{print $1}'`
+set MM   = `$CAMx_HOME/datelib/j2g $CUR_JDATE | awk '{print $2}'`
+set DD   = `$CAMx_HOME/datelib/j2g $CUR_JDATE | awk '{print $3}'`
+set CUR_GDATE = ${YEAR}${MM}${DD}
 set BDD  = $DD
 set BHH  = $HH
 
 if ( $BHH == "00" ) then
   set EHH = 24
-  set EYYYYMMDD = $YEAR$MM$DD
+  set TOM_GDATE = $CUR_GDATE
 else 
   set EHH = $BHH
-  set EYYYYMMDD = `$CAMx_HOME/datelib/ymd_next $YEAR$MM$DD`
+  set TOM_GDATE = `$CAMx_HOME/datelib/ymd_next $CUR_GDATE`
 endif
-
-set EYEAR = `echo $EYYYYMMDD | cut -c 1-4`
-set EMM   = `echo $EYYYYMMDD | cut -c 5-6`
-set EDD   = `echo $EYYYYMMDD | cut -c 7-8`
+echo "C"
+set EYEAR = `echo $TOM_GDATE | cut -c 1-4`
+set EMM   = `echo $TOM_GDATE | cut -c 5-6`
+set EDD   = `echo $TOM_GDATE | cut -c 7-8`
 
 set BHH   = `echo $BHH | awk '{printf("%2.2d",$1)}'`
 set EHH   = `echo $EHH | awk '{printf("%2.2d",$1)}'`
 
-set YEARm1 = `$CAMx_HOME/datelib/j2g $PREV_DATE | awk '{print $1}'`
-set MMm1   = `$CAMx_HOME/datelib/j2g $PREV_DATE | awk '{print $2}'`
-set DDm1   = `$CAMx_HOME/datelib/j2g $PREV_DATE | awk '{print $3}'`
+set YEARm1 = `$CAMx_HOME/datelib/j2g $YES_JDATE | awk '{print $1}'`
+set MMm1   = `$CAMx_HOME/datelib/j2g $YES_JDATE | awk '{print $2}'`
+set DDm1   = `$CAMx_HOME/datelib/j2g $YES_JDATE | awk '{print $3}'`
+echo "D"
+set YES_GDATE = ${YEARm1}${MMm1}${DDm1}
 
-set YY   = `echo $YEAR | awk  '{printf("%2.4d", $1)}'`
-set YYm1 = `echo $YEARm1 | awk '{printf("%2.4d", $1)}'`
+set CUR_GDATE     = `echo $CUR_GDATE     | awk '{printf("%6.6d",$1)}'`
+set YES_GDATE = `echo $YES_GDATE | awk '{printf("%6.6d",$1)}'`
 
-set TODAY     = ${YEAR}${MM}${DD}
-set YESTERDAY = ${YEARm1}${MMm1}${DDm1}
-
-set TODAY     = `echo $TODAY     | awk '{printf("%6.6d",$1)}'`
-set YESTERDAY = `echo $YESTERDAY | awk '{printf("%6.6d",$1)}'`
-
-if ($GRID == 1) then
+if ($DOMAINS_GRID == 1) then
   if ($CTM_COLD_START == 0) then
-    if ( ! -f $ICstart/CAMx5.4.${RUN}.${IYMD_PREV}.inst ) then
+    if ( ! -f $ICstart/CAMx5.4.${RUN}.${YES_BEG_GDATE}.inst ) then
        set RESTART = "false"
-       set IC = "$ICBC/icon.camx.${DOMAINS_RES}km.$IJDAY.bin"
+       set IC = "$ICBC/icon.camx.${DOMAINS_RES}km.$BEG_JDATE.bin"
     else
        set RESTART = "true"
        set IC = " "
     endif
   else
-    set RESTART = "false"
-    set IC = "$ICBC/icon.camx.${DOMAINS_RES}km.$IJDAY.bin"
+    if  ($CUR_GDATE == $BEG_GDATE) then
+      set RESTART = "false"
+      set IC = "$ICBC/icon.camx.${DOMAINS_RES}km.$BEG_JDATE.bin"
+    else
+      set RESTART = "true"
+      set IC = " "
+    endif
   endif
 else
   if ($CTM_COLD_START == 0) then
-    if ( ! -f $ICstart/CAMx5.4.${RUN}.${YESTERDAY}.inst ) then
+    if ( ! -f $ICstart/CAMx5.4.${RUN}.${YES_GDATE}.inst ) then
       set RESTART = "false"
-      set IC = "$ICBC/icon.camx.${DOMAINS_RES}km.$BEGJDAY.bin"
+      set IC = "$ICBC/icon.camx.${DOMAINS_RES}km.$CUR_JDATE.bin"
     else
       set RESTART = "true"
       set IC = " " 
     endif
   else
-    set RESTART = "false"
-    set IC = "$ICBC/icon.camx.${DOMAINS_RES}km.$BEGJDAY.bin"
+    if ($CUR_GDATE == $BEG_GDATE) then
+      set RESTART = "false"
+      set IC = "$ICBC/icon.camx.${DOMAINS_RES}km.$CUR_JDATE.bin"
+    else
+      set RESTART = "true"
+      set IC = " "
+    endif
   endif
 endif 
 
@@ -142,12 +147,12 @@ cat << ieof > CAMx.in
 !--- Parameters for the master (first) grid ---
 
  Number_of_Grids      = 1,
- Master_Origin_XCoord = ${XCRO_AQMS_Dx[$GRID]},         ! km or deg, SW corner of cell(1,1)
- Master_Origin_YCoord = ${YCRO_AQMS_Dx[$GRID]},        ! km or deg, SW corner of cell (1,1)
+ Master_Origin_XCoord = ${XCRO_AQMS_Dx[$DOMAINS_GRID]},         ! km or deg, SW corner of cell(1,1)
+ Master_Origin_YCoord = ${YCRO_AQMS_Dx[$DOMAINS_GRID]},        ! km or deg, SW corner of cell (1,1)
  Master_Cell_XSize    = ${DOMAINS_RES},           ! km or deg
  Master_Cell_YSize    = ${DOMAINS_RES},           ! km or deg
- Master_Grid_Columns  = ${NCOLS_AQMS_Dx[$GRID]},
- Master_Grid_Rows     = ${NROWS_AQMS_Dx[$GRID]},
+ Master_Grid_Columns  = ${NCOLS_AQMS_Dx[$DOMAINS_GRID]},
+ Master_Grid_Rows     = ${NROWS_AQMS_Dx[$DOMAINS_GRID]},
  Number_of_Layers(1)  = $LAYERS_NUM_AQMS,
 
 !--- Model options ---
@@ -170,7 +175,7 @@ cat << ieof > CAMx.in
 
 !--- Output specifications ---
 
- Root_Output_Name         = '$OUTPUT/CAMx5.4.$RUN.$TODAY',
+ Root_Output_Name         = '$OUTPUT/CAMx5.4.$RUN.$CUR_GDATE',
  Output_3D_Grid(1)        = .true.,  ! Set Average_Output_3D = .false.
  HDF_Format_Output        = .false.,
  Number_of_Output_Species  = 50,
@@ -229,22 +234,22 @@ cat << ieof > CAMx.in
 !--- Input files ---
 
  Chemistry_Parameters = '$CAMxIN/chem/CAMx5.4.chemparam.6_CF',
- Photolyis_Rates      = '$CAMxIN/tuv/tuv_hk.${TODAY}.${DOMAINS_RES}km_CB05',
+ Photolyis_Rates      = '$CAMxIN/tuv/tuv_hk.${CUR_GDATE}.${DOMAINS_RES}km_CB05',
  Initial_Conditions   = '$IC',
- Boundary_Conditions  = '$ICBC/bc.camx.${DOMAINS_RES}km.$JDATE.uam',
- Albedo_Haze_Ozone    = '$CAMxIN/ahomap/ahomap.hk.${TODAY}.${DOMAINS_RES}km',
- Point_Sources        = '$PTSRCE/camx.hk.cb05.${DOMAINS_RES}km.ptsrc.${JDATE}.bin',
- Master_Grid_Restart  = '$OUTPUT/CAMx5.4.$RUN.${YESTERDAY}.inst',
+ Boundary_Conditions  = '$ICBC/bc.camx.${DOMAINS_RES}km.$CUR_JDATE.uam',
+ Albedo_Haze_Ozone    = '$CAMxIN/ahomap/ahomap.hk.${CUR_GDATE}.${DOMAINS_RES}km',
+ Point_Sources        = '$PTSRCE/camx.hk.cb05.${DOMAINS_RES}km.ptsrc.${CUR_JDATE}.bin',
+ Master_Grid_Restart  = '$OUTPUT/CAMx5.4.$RUN.${YES_GDATE}.inst',
  PiG_Restart          = ' ',
 
- Emiss_Grid(1)   = '$EMIS_file/emiss.camx.cb05.an.HK${DOMAINS_RES_D}_${JDATE}.uam',
- Landuse_Grid(1) = '$MET1/camx_lu.${TODAY}.${DOMAINS_RES}km.bin',
- ZP_Grid(1)      = '$MET1/camx_zp.${TODAY}.${DOMAINS_RES}km.bin',
- Wind_Grid(1)    = '$MET1/camx_uv.${TODAY}.${DOMAINS_RES}km.bin',
- Temp_Grid(1)    = '$MET1/camx_tp.${TODAY}.${DOMAINS_RES}km.bin',
- Vapor_Grid(1)   = '$MET1/camx_qa.${TODAY}.${DOMAINS_RES}km.bin',
- Cloud_Grid(1)   = '$MET1/camx_cr.${TODAY}.${DOMAINS_RES}km.bin',
- Kv_Grid(1)      = '$MET1/camx_kv_ob70.${TODAY}.${DOMAINS_RES}km.bin',
+ Emiss_Grid(1)   = '$EMIS_file/emiss.camx.cb05.an.HK${DOMAINS_RES_D}_${CUR_JDATE}.uam',
+ Landuse_Grid(1) = '$MET1/camx_lu.${CUR_GDATE}.${DOMAINS_RES}km.bin',
+ ZP_Grid(1)      = '$MET1/camx_zp.${CUR_GDATE}.${DOMAINS_RES}km.bin',
+ Wind_Grid(1)    = '$MET1/camx_uv.${CUR_GDATE}.${DOMAINS_RES}km.bin',
+ Temp_Grid(1)    = '$MET1/camx_tp.${CUR_GDATE}.${DOMAINS_RES}km.bin',
+ Vapor_Grid(1)   = '$MET1/camx_qa.${CUR_GDATE}.${DOMAINS_RES}km.bin',
+ Cloud_Grid(1)   = '$MET1/camx_cr.${CUR_GDATE}.${DOMAINS_RES}km.bin',
+ Kv_Grid(1)      = '$MET1/camx_kv_ob70.${CUR_GDATE}.${DOMAINS_RES}km.bin',
 
 & END
  /

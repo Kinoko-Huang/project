@@ -22,18 +22,18 @@ rm -f ../Output/ICBC/BCON_COMBINE_*
 
 while ( $CUR_JDATE <= $END_JDATE )
   
-  set YYYY = `$CAMx_HOME/datelib/j2g $CUR_JDATE | awk '{print $1}'`
-  set MM   = `$CAMx_HOME/datelib/j2g $CUR_JDATE | awk '{print $2}'`
-  set DD   = `$CAMx_HOME/datelib/j2g $CUR_JDATE | awk '{print $3}'`
-  set DOW  = `$CAMx_HOME/datelib/yyyymmdd2dow.7day.lnx $YYYY$MM$DD`
+  set CUR_Y = `$CAMx_HOME/datelib/j2g $CUR_JDATE | awk '{print $1}'`
+  set CUR_M   = `$CAMx_HOME/datelib/j2g $CUR_JDATE | awk '{print $2}'`
+  set CUR_D   = `$CAMx_HOME/datelib/j2g $CUR_JDATE | awk '{print $3}'`
+  set DOW  = `$CAMx_HOME/datelib/yyyymmdd2dow.7day.lnx $CUR_Y$CUR_M$CUR_D`
   ######### BCON is seasonal change, choose the season ###########
-  if ( "$MM" == "12" | "$MM" == "01" | "$MM" == "02" ) then
+  if ( "$CUR_M" == "12" | "$CUR_M" == "01" | "$CUR_M" == "02" ) then
     set season = winter
-  else if ( "$MM" == "03" | "$MM" == "04" | "$MM" == "05" ) then
+  else if ( "$CUR_M" == "03" | "$CUR_M" == "04" | "$CUR_M" == "05" ) then
     set season = spring
-  else if ( "$MM" == "06" | "$MM" == "07" | "$MM" == "08" ) then
+  else if ( "$CUR_M" == "06" | "$CUR_M" == "07" | "$CUR_M" == "08" ) then
     set season = summer
-  else if ( "$MM" == "09" | "$MM" == "10" | "$MM" == "11" ) then
+  else if ( "$CUR_M" == "09" | "$CUR_M" == "10" | "$CUR_M" == "11" ) then
     set season = autumn
   endif
  
@@ -153,7 +153,7 @@ while ( $CUR_JDATE <= $END_JDATE )
    endsw
 
   ######## Run m3tshift to change bc time ############
-  ./run.change_bc${HH}z_time.csh $CUR_JDATE $DATEDOW >& ../msg/log.m3tshift.bc.$CUR_JDATE
+  ./run.change_bc${INIT_H}z_time.csh $CUR_JDATE $DATEDOW >& ../msg/log.m3tshift.bc.$CUR_JDATE
 
   set INPUT_CMAQ_BCON  = $cwd/../Output/ICBC/BCON_COMBINE_$CUR_JDATE
   set OUTPUT_CAMx_BC   = $CAMx_HOME/inputs/icbc/bc.camx.${DOMAINS_RES}km.$CUR_JDATE.uam

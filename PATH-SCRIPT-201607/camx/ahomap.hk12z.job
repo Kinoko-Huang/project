@@ -58,13 +58,13 @@ rm -f ../msg/log.ahomap.*.${DOMAINS_RES}km
 
 while ( $CUR_JDATE <= $END_DATE )
 
-set YYYY   = `$CAMx_HOME/datelib/j2g $CUR_JDATE | awk '{print $1}'`
-set MM     = `$CAMx_HOME/datelib/j2g $CUR_JDATE | awk '{print $2}'`
-set DD     = `$CAMx_HOME/datelib/j2g $CUR_JDATE | awk '{print $3}'`
-set YY     = `echo $YYYY | cut -c 3-4`
+set CUR_Y   = `$CAMx_HOME/datelib/j2g $CUR_JDATE | awk '{print $1}'`
+set CUR_M     = `$CAMx_HOME/datelib/j2g $CUR_JDATE | awk '{print $2}'`
+set CUR_D     = `$CAMx_HOME/datelib/j2g $CUR_JDATE | awk '{print $3}'`
+set CUR_YY     = `echo $CUR_Y | cut -c 3-4`
 
-set CUR_GDATE = $YYYY$MM$DD
-set CUR_GDATE_YY = $YY$MM$DD
+set CUR_GDATE = $CUR_Y$CUR_M$CUR_D
+set CUR_GDATE_YY = $CUR_YY$CUR_M$CUR_D
 
 set TOM_GDATE = `$CAMx_HOME/datelib/ymd_next $CUR_GDATE`
 set TOM_GDATE_YY = `echo $TOM_GDATE | cut -c 3-8`

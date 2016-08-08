@@ -40,11 +40,11 @@ if ( $CUR_JDATE == $BEG_JDATE ) then
   set ic = "T"
 endif
 
-set YYYY = `$CAMx_HOME/datelib/j2g $CUR_JDATE | awk '{print $1}'`
-set MM   = `$CAMx_HOME/datelib/j2g $CUR_JDATE | awk '{print $2}'`
-set DD   = `$CAMx_HOME/datelib/j2g $CUR_JDATE | awk '{print $3}'`
-set dy   = `echo $CUR_JDATE |cut -c 3-7`
-set CUR_GDATE = $YYYY$MM$DD
+set CUR_Y = `$CAMx_HOME/datelib/j2g $CUR_JDATE | awk '{print $1}'`
+set CUR_M   = `$CAMx_HOME/datelib/j2g $CUR_JDATE | awk '{print $2}'`
+set CUR_D   = `$CAMx_HOME/datelib/j2g $CUR_JDATE | awk '{print $3}'`
+set CUR_J   = `echo $CUR_JDATE |cut -c 3-7`
+set CUR_GDATE = $CUR_Y$CUR_M$CUR_D
 
 set iwest = ${IWEST_AQMS_Dx[$DOMAINS_GRID]}
 set ieast = ${IEAST_AQMS_Dx[$DOMAINS_GRID]}
@@ -59,7 +59,7 @@ output BC file     |$CAMxDir/bc.camx.${DOMAINS_RES}km.$CUR_JDATE.uam
 iwst,iest,jsth,jnth|$iwest,$ieast,$jsouth,$jnorth
 mesh factor        |3
 make IC file?      |$ic
-time/date for IC   |${HH}  $dy
+time/date for IC   |${INIT_H}  $CUR_J
 output IC file     |$CAMxDir/icon.camx.${DOMAINS_RES}km.${BEG_JDATE}.bin
 diagnostic file #1 |msg/camx.${DOMAINS_RES}km.$CUR_JDATE.diag1
 diagnostic file #2 |msg/camx.${DOMAINS_RES}km.$CUR_JDATE.diag2

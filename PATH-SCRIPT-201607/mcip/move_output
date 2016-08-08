@@ -26,26 +26,26 @@ if [ ! -d $OutputDir ]; then
   }
 fi
 
-#for d in 27 9 3 1
-for d in ${G_DOMAINS_RES_gov}
+#for DOMAINS_RES in 27 9 3 1
+for DOMAINS_RES in ${G_DOMAINS_RES_gov}
 do
-  [ -f outputs/$d/GRIDDESC ] || {
-    echo "outputs/$d/GRIDDESC does not exist"
+  [ -f outputs/$DOMAINS_RES/GRIDDESC ] || {
+    echo "outputs/$DOMAINS_RES/GRIDDESC does not exist"
     exit 1
   }
 done
 
-#for d in 27 9 3 1 
-for d in ${G_DOMAINS_RES_gov}
+#for DOMAINS_RES in 27 9 3 1 
+for DOMAINS_RES in ${G_DOMAINS_RES_gov}
 do
-  if [ ! -d $OutputDir/${d}km ]; then
-    /bin/mkdir $OutputDir/${d}km || {
-      echo "Failed to create output subdirectory $OutputDir/${d}km"
+  if [ ! -d $OutputDir/${DOMAINS_RES}km ]; then
+    /bin/mkdir $OutputDir/${DOMAINS_RES}km || {
+      echo "Failed to create output subdirectory $OutputDir/${DOMAINS_RES}km"
       exit 1
     }
   fi
-  /usr/bin/rsync -av outputs/$d/ $OutputDir/${d}km/ || {
-    echo "Failed to run /usr/bin/rsync -av outputs/$d/ $OutputDir/${d}km/"
+  /usr/bin/rsync -av outputs/$DOMAINS_RES/ $OutputDir/${DOMAINS_RES}km/ || {
+    echo "Failed to run /usr/bin/rsync -av outputs/$DOMAINS_RES/ $OutputDir/${DOMAINS_RES}km/"
     exit 1
   }
 done

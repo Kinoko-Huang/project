@@ -18,21 +18,21 @@ rm -f ../msg/log.ic.spcmap.*.${DOMAINS_RES}km
 
 set BEG_JDATE = $argv[1]
 
-set MM = `$CAMx_HOME/datelib/j2g $BEG_JDATE | awk '{print $2}'`
+set BEG_M = `$CAMx_HOME/datelib/j2g $BEG_JDATE | awk '{print $2}'`
 ####### ICON is seasonal change, choose season ########
 
 set YYYY1 = 2006
 
-if ( $MM == 12 |$MM == 01 | $MM == 02) then
+if ( $BEG_M == 12 |$BEG_M == 01 | $BEG_M == 02) then
   set MM1 = 01
   set INPUT_CMAQ_ICON = $CMAQ_ICBC/$YYYY1$MM1/ICON_COMBINE_2006002
-else if ( $MM == 03 | $MM == 04 | $MM == 05 ) then
+else if ( $BEG_M == 03 | $BEG_M == 04 | $BEG_M == 05 ) then
   set MM1 = 04
   set INPUT_CMAQ_ICON = $CMAQ_ICBC/$YYYY1$MM1/ICON_COMBINE_2006091
-else if ( $MM == 06 | $MM == 07 | $MM == 08 ) then
+else if ( $BEG_M == 06 | $BEG_M == 07 | $BEG_M == 08 ) then
   set MM1 = 07
   set INPUT_CMAQ_ICON = $CMAQ_ICBC/$YYYY1$MM1/ICON_COMBINE_2006182
-else if ( $MM == 09 | $MM == 10 | $MM == 11 ) then
+else if ( $BEG_M == 09 | $BEG_M == 10 | $BEG_M == 11 ) then
   set MM1 = 10
   set INPUT_CMAQ_ICON = $CMAQ_ICBC/$YYYY1$MM1/ICON_COMBINE_2006274
 endif

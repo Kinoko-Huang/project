@@ -118,12 +118,12 @@ set DOMAINS_RES = $argv[3]
 rm -f msg/log.tuv.*.$DOMAINS_RES
 
 while ( $CUR_JDATE <= $END_JDATE )
-set YYYY = `$CAMx_HOME/datelib/j2g $CUR_JDATE | awk '{print $1}'`
-set MM   = `$CAMx_HOME/datelib/j2g $CUR_JDATE | awk '{print $2}'`
-set DD   = `$CAMx_HOME/datelib/j2g $CUR_JDATE | awk '{print $3}'`
-set YY   = `echo $YYYY | cut -c 3-4`
-set CUR_GDATE = $YYYY$MM$DD
-set CUR_GDATE_YY = $YY$MM$DD
+set CUR_Y = `$CAMx_HOME/datelib/j2g $CUR_JDATE | awk '{print $1}'`
+set CUR_M   = `$CAMx_HOME/datelib/j2g $CUR_JDATE | awk '{print $2}'`
+set CUR_D   = `$CAMx_HOME/datelib/j2g $CUR_JDATE | awk '{print $3}'`
+set CUR_YY   = `echo $CUR_Y | cut -c 3-4`
+set CUR_GDATE = $CUR_Y$CUR_M$CUR_D
+set CUR_GDATE_YY = $CUR_YY$CUR_M$CUR_D
 
 cat << EOF >& ./tuv.inp
 output file name   |$CAMx_HOME/inputs/tuv/tuv_hk.$CUR_GDATE.${DOMAINS_RES}km_CB05

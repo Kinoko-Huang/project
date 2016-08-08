@@ -93,7 +93,7 @@ source ../domains_def.config
 #-----------------------------------------------------------------------
 
 set MET_model = $argv[1]
-set Initial_date = $argv[2]    
+set INIT_TIME = $argv[2]    
 set CoordName  = LAM_28.5N114E
 set DataPath    = $argv[3]
 set InMetDir    = ${DataPath}
@@ -142,90 +142,86 @@ endif
 #                        $InMetDir/MMOUT_DOMAIN2.time2 )
 #
 #-----------------------------------------------------------------------
-#foreach GRID (d01 d02 d03 d04)
-set GRID = 1
+#foreach DOMAINS_GRID (d01 d02 d03 d04)
+set DOMAINS_GRID = 1
 foreach DOMAINS_RES ( ${G_DOMAINS_RES} )
 
 set GRKM = ${DOMAINS_RES}  #27 9 3 1
 set GridName = HKPATH_${GRKM}KM     #HKPATH_27 HKPATH_9 HKPATH_3 HKPATH_1
-set NCOLS = ${NCOLS_AQMS_Dx[$GRID]} 
-set NROWS = ${NROWS_AQMS_Dx[$GRID]}
-set X0 = ${COL_CUT_AQMS_Dx[$GRID]}
-set Y0 = ${ROW_CUT_AQMS_Dx[$GRID]}
+set NCOLS = ${NCOLS_AQMS_Dx[$DOMAINS_GRID]} 
+set NROWS = ${NROWS_AQMS_Dx[$DOMAINS_GRID]}
+set X0 = ${COL_CUT_AQMS_Dx[$DOMAINS_GRID]}
+set Y0 = ${ROW_CUT_AQMS_Dx[$DOMAINS_GRID]}
 
 set OutDir = ${OutDir_root}/${GRKM} 
 
 if (! -e ${OutDir}) mkdir -p ${OutDir}
 
-##set GRD = `echo $GRID | cut -b 2-2`
-#set GRD = $GRID
+##set GRD = `echo $DOMAINS_GRID | cut -b 2-2`
+#set GRD = $DOMAINS_GRID
 #set InTer      = "$InTerDir/TERRAIN_DOMAIN${GRD}"
 
-set Ini_year = `echo ${Initial_date} | cut -c 1-4`
-set Ini_month = `echo ${Initial_date} | cut -c 5-6`
-set Ini_day = `echo ${Initial_date} | cut -c 7-8`
-set Ini_hour = `echo ${Initial_date} | cut -c 9-10`
+set INIT_Y = `echo ${INIT_TIME} | cut -c 1-4`
+set INIT_M = `echo ${INIT_TIME} | cut -c 5-6`
+set INIT_D = `echo ${INIT_TIME} | cut -c 7-8`
+set INIT_H = `echo ${INIT_TIME} | cut -c 9-10`
 
-set Ini_julian = `g2j ${Ini_year} ${Ini_month} ${Ini_day}`
+set INIT_JDATE = `g2j ${INIT_Y} ${INIT_M} ${INIT_D}`
 
-#@ JDY  = ${Ini_julian} + $CTM_SKIP_N_DAYS
-set JDY = `$PATH_SYSDIR/bin/yj_next ${Ini_julian} $CTM_SKIP_N_DAYS`
-#@ eJDY = $JDY + $CTM_SIM_N_DAYS - 1
-set atmp = `$PATH_SYSDIR/bin/yj_next $JDY $CTM_SIM_N_DAYS`
-set eJDY = `$PATH_SYSDIR/bin/yj_prev $atmp 1`
+set CUR_JDATE = `$PATH_SYSDIR/bin/yj_next ${INIT_JDATE} $CTM_SKIP_N_DAYS`
+set atmp = `$PATH_SYSDIR/bin/yj_next $CUR_JDATE $CTM_SIM_N_DAYS`
+set END_JDATE = `$PATH_SYSDIR/bin/yj_prev $atmp 1`
 
-echo "JDY=$JDY"
-echo "eJDY=$eJDY"
+echo "CUR_JDATE=$CUR_JDATE"
+echo "END_JDATE=$END_JDATE"
 
-while ($JDY <= $eJDY)
+while ($CUR_JDATE <= $END_JDATE)
 
-#@ JDYm1 = $JDY - 1
-set JDYm1 = `$PATH_SYSDIR/bin/yj_prev $JDY 1`
-#@ JDY1  = $JDY + 1
-set JDY1  = `$PATH_SYSDIR/bin/yj_next $JDY 1`
+set YES_JDATE = `$PATH_SYSDIR/bin/yj_prev $CUR_JDATE 1`
+set TOM_JDATE  = `$PATH_SYSDIR/bin/yj_next $CUR_JDATE 1`
 
-set yr  = `j2g $JDY | awk '{print $1}'`
-set mo  = `j2g $JDY | awk '{print $2}'`
-set dy  = `j2g $JDY | awk '{print $3}'`
-set yrm1 = `j2g $JDYm1 | awk '{print $1}'`
-set mom1 = `j2g $JDYm1 | awk '{print $2}'`
-set dym1 = `j2g $JDYm1 | awk '{print $3}'`
-set yr1  = `j2g $JDY1 | awk '{print $1}'`
-set mo1 = `j2g $JDY1 | awk '{print $2}'`
-set dy1 = `j2g $JDY1 | awk '{print $3}'`
+set CUR_Y  = `j2g $CUR_JDATE | awk '{print $1}'`
+set CUR_M  = `j2g $CUR_JDATE | awk '{print $2}'`
+set CUR_D  = `j2g $CUR_JDATE | awk '{print $3}'`
+set YES_Y = `j2g $YES_JDATE | awk '{print $1}'`
+set YES_M = `j2g $YES_JDATE | awk '{print $2}'`
+set YES_D = `j2g $YES_JDATE | awk '{print $3}'`
+set TOM_Y  = `j2g $TOM_JDATE | awk '{print $1}'`
+set TOM_M = `j2g $TOM_JDATE | awk '{print $2}'`
+set TOM_D = `j2g $TOM_JDATE | awk '{print $3}'`
 
-set MET_files = `ls $InMetDir/${file_hd}_d0${GRID}* | grep "${yrm1}-${mom1}-${dym1}_23\|${yr}-${mo}-${dy}\|${yr1}-${mo1}-${dy1}" | sort`
+set MET_files = `ls $InMetDir/${file_hd}_d0${DOMAINS_GRID}* | grep "${YES_Y}-${YES_M}-${YES_D}_23\|${CUR_Y}-${CUR_M}-${CUR_D}\|${TOM_Y}-${TOM_M}-${TOM_D}" | sort`
 set InMetFiles = ($MET_files)
 
-##set InMetFiles = ( $InMetDir/wrfout_d0{GRID}_$yrm1-$mom1-${dym1}_23 \
-##                   $InMetDir/wrfout_d0{GRID}_$yr-$mo-${dy}_00 \
-##                   $InMetDir/wrfout_d0{GRID}_$yr-$mo-${dy}_01 \
-##                   $InMetDir/wrfout_d0{GRID}_$yr-$mo-${dy}_02 \
-##                   $InMetDir/wrfout_d0{GRID}_$yr-$mo-${dy}_03 \
-##                   $InMetDir/wrfout_d0{GRID}_$yr-$mo-${dy}_04 \
-##                   $InMetDir/wrfout_d0{GRID}_$yr-$mo-${dy}_05 \
-##                   $InMetDir/wrfout_d0{GRID}_$yr-$mo-${dy}_06 \
-##                   $InMetDir/wrfout_d0{GRID}_$yr-$mo-${dy}_07 \
-##                   $InMetDir/wrfout_d0{GRID}_$yr-$mo-${dy}_08 \
-##                   $InMetDir/wrfout_d0{GRID}_$yr-$mo-${dy}_09 \
-##                   $InMetDir/wrfout_d0{GRID}_$yr-$mo-${dy}_10 \
-##                   $InMetDir/wrfout_d0{GRID}_$yr-$mo-${dy}_11 \
-##                   $InMetDir/wrfout_d0{GRID}_$yr-$mo-${dy}_12 \
-##                   $InMetDir/wrfout_d0{GRID}_$yr-$mo-${dy}_13 \
-##                   $InMetDir/wrfout_d0{GRID}_$yr-$mo-${dy}_14 \
-##                   $InMetDir/wrfout_d0{GRID}_$yr-$mo-${dy}_15 \
-##                   $InMetDir/wrfout_d0{GRID}_$yr-$mo-${dy}_16 \
-##                   $InMetDir/wrfout_d0{GRID}_$yr-$mo-${dy}_17 \
-##                   $InMetDir/wrfout_d0{GRID}_$yr-$mo-${dy}_18 \
-##                   $InMetDir/wrfout_d0{GRID}_$yr-$mo-${dy}_19 \
-##                   $InMetDir/wrfout_d0{GRID}_$yr-$mo-${dy}_20 \
-##                   $InMetDir/wrfout_d0{GRID}_$yr-$mo-${dy}_21 \
-##                   $InMetDir/wrfout_d0{GRID}_$yr-$mo-${dy}_22 \
-##                   $InMetDir/wrfout_d0{GRID}_$yr-$mo-${dy}_23 \
-##                   $InMetDir/wrfout_d0{GRID}_$yr1-$mo1-${dy1}_00 )
+##set InMetFiles = ( $InMetDir/wrfout_d0{DOMAINS_GRID}_$YES_Y-$YES_M-${YES_D}_23 \
+##                   $InMetDir/wrfout_d0{DOMAINS_GRID}_$CUR_Y-$CUR_M-${CUR_D}_00 \
+##                   $InMetDir/wrfout_d0{DOMAINS_GRID}_$CUR_Y-$CUR_M-${CUR_D}_01 \
+##                   $InMetDir/wrfout_d0{DOMAINS_GRID}_$CUR_Y-$CUR_M-${CUR_D}_02 \
+##                   $InMetDir/wrfout_d0{DOMAINS_GRID}_$CUR_Y-$CUR_M-${CUR_D}_03 \
+##                   $InMetDir/wrfout_d0{DOMAINS_GRID}_$CUR_Y-$CUR_M-${CUR_D}_04 \
+##                   $InMetDir/wrfout_d0{DOMAINS_GRID}_$CUR_Y-$CUR_M-${CUR_D}_05 \
+##                   $InMetDir/wrfout_d0{DOMAINS_GRID}_$CUR_Y-$CUR_M-${CUR_D}_06 \
+##                   $InMetDir/wrfout_d0{DOMAINS_GRID}_$CUR_Y-$CUR_M-${CUR_D}_07 \
+##                   $InMetDir/wrfout_d0{DOMAINS_GRID}_$CUR_Y-$CUR_M-${CUR_D}_08 \
+##                   $InMetDir/wrfout_d0{DOMAINS_GRID}_$CUR_Y-$CUR_M-${CUR_D}_09 \
+##                   $InMetDir/wrfout_d0{DOMAINS_GRID}_$CUR_Y-$CUR_M-${CUR_D}_10 \
+##                   $InMetDir/wrfout_d0{DOMAINS_GRID}_$CUR_Y-$CUR_M-${CUR_D}_11 \
+##                   $InMetDir/wrfout_d0{DOMAINS_GRID}_$CUR_Y-$CUR_M-${CUR_D}_12 \
+##                   $InMetDir/wrfout_d0{DOMAINS_GRID}_$CUR_Y-$CUR_M-${CUR_D}_13 \
+##                   $InMetDir/wrfout_d0{DOMAINS_GRID}_$CUR_Y-$CUR_M-${CUR_D}_14 \
+##                   $InMetDir/wrfout_d0{DOMAINS_GRID}_$CUR_Y-$CUR_M-${CUR_D}_15 \
+##                   $InMetDir/wrfout_d0{DOMAINS_GRID}_$CUR_Y-$CUR_M-${CUR_D}_16 \
+##                   $InMetDir/wrfout_d0{DOMAINS_GRID}_$CUR_Y-$CUR_M-${CUR_D}_17 \
+##                   $InMetDir/wrfout_d0{DOMAINS_GRID}_$CUR_Y-$CUR_M-${CUR_D}_18 \
+##                   $InMetDir/wrfout_d0{DOMAINS_GRID}_$CUR_Y-$CUR_M-${CUR_D}_19 \
+##                   $InMetDir/wrfout_d0{DOMAINS_GRID}_$CUR_Y-$CUR_M-${CUR_D}_20 \
+##                   $InMetDir/wrfout_d0{DOMAINS_GRID}_$CUR_Y-$CUR_M-${CUR_D}_21 \
+##                   $InMetDir/wrfout_d0{DOMAINS_GRID}_$CUR_Y-$CUR_M-${CUR_D}_22 \
+##                   $InMetDir/wrfout_d0{DOMAINS_GRID}_$CUR_Y-$CUR_M-${CUR_D}_23 \
+##                   $InMetDir/wrfout_d0{DOMAINS_GRID}_$TOM_Y-$TOM_M-${TOM_D}_00 )
 
 set IfTer      = "F"
-#set InTerFile  = $InTerDir/geo_em.d0${GRID}.nc
+#set InTerFile  = $InTerDir/geo_em.d0${DOMAINS_GRID}.nc
 
 set InSatFiles = ( )
 
@@ -261,10 +257,10 @@ set LSAT    = 0
 #   INTVL:       Frequency of output [minutes]
 #-----------------------------------------------------------------------
 
-set APPL       = ${GRKM}km.${yr}${mo}${dy}
+set APPL       = ${GRKM}km.${CUR_Y}${CUR_M}${CUR_D}
 
-set MCIP_START = ${yr}-${mo}-${dy}-${Ini_hour}:00:00.0000  # [UTC]
-set MCIP_END   = ${yr1}-${mo1}-${dy1}-${Ini_hour}:00:00.0000  # [UTC]
+set MCIP_START = ${CUR_Y}-${CUR_M}-${CUR_D}-${INIT_H}:00:00.0000  # [UTC]
+set MCIP_END   = ${TOM_Y}-${TOM_M}-${TOM_D}-${INIT_H}:00:00.0000  # [UTC]
 
 ##endif
 
@@ -594,8 +590,8 @@ else
   exit 1
 endif
 
-#@ JDY ++
-set JDY = `$PATH_SYSDIR/bin/yj_next ${JDY} 1`
-end
-@ GRID ++
-end
+set CUR_JDATE = `$PATH_SYSDIR/bin/yj_next ${CUR_JDATE} 1`
+end       #end of while
+
+@ DOMAINS_GRID ++
+end       #end of foreach DOMAINS_RES

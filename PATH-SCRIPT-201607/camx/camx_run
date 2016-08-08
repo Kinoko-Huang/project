@@ -171,12 +171,12 @@ $ECHO "No. of Processors = ${NProcs}"
 $PATH_SYSDIR/bin/start_mpd
 
 ##### Start CAMx ###################################
-#$ECHO Run ./Runall.OP.csh $BEG_GTIME $END_GTIME
-#./Runall.OP.csh $BEG_GTIME $END_GTIME || {
-#  $ECHO "Failed to run ./Runall.OP.csh $BEG_GTIME $END_GTIME"
-#  $PATH_SYSDIR/bin/stop_mpd
-#  exit 1
-#}
+$ECHO Run ./Runall.OP.csh $BEG_GTIME $END_GTIME
+./Runall.OP.csh $BEG_GTIME $END_GTIME || {
+  $ECHO "Failed to run ./Runall.OP.csh $BEG_GTIME $END_GTIME"
+  $PATH_SYSDIR/bin/stop_mpd
+  exit 1
+}
 
 $PATH_SYSDIR/bin/stop_mpd
 

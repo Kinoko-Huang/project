@@ -26,27 +26,27 @@ if [ "$INIT_TIME" != "$DT" ]; then
   exit 1
 fi
 
-INIT_DATE=`/bin/date -d "${INIT_TIME:0:8} $CTM_SKIP_N_DAYS days" +%Y%m%d`
+INIT_GDATE=`/bin/date -d "${INIT_TIME:0:8} $CTM_SKIP_N_DAYS days" +%Y%m%d`
 let "n = CTM_SIM_N_DAYS - 1"
-END_DATE=`/bin/date -d "${INIT_DATE} $n days" +%Y%m%d`
+END_GDATE=`/bin/date -d "${INIT_GDATE} $n days" +%Y%m%d`
 
 FileTypes="GRIDBDY2D GRIDCRO2D GRIDDOT2D METBDY3D METCRO2D METCRO3D METDOT3D"
 
-#for dom in 27 9 3 1
-for dom in ${G_DOMAINS_RES_gov}
+#for DOMAINS_RES in 27 9 3 1
+for DOMAINS_RES in ${G_DOMAINS_RES_gov}
 do
-  if [ ! -d outputs/${dom} ]; then
-    echo "${dom} directory does not exist"
+  if [ ! -d outputs/${DOMAINS_RES} ]; then
+    echo "${DOMAINS_RES} directory does not exist"
     exit 1
   fi
   for ft in $FileTypes
   do
-    da=${INIT_DATE}
+    CUR_GDATE=${INIT_GDATE}
     Size=
-    while [ "$da" -le "$END_DATE" ]
+    while [ "$CUR_GDATE" -le "$END_GDATE" ]
     do
-      OutFile="outputs/${dom}/${ft}.${dom}km.$da"
-      #OutFile="${dom}/${ft}_${dom}km.$da"
+      OutFile="outputs/${DOMAINS_RES}/${ft}.${DOMAINS_RES}km.$CUR_GDATE"
+      #OutFile="${DOMAINS_RES}/${ft}_${DOMAINS_RES}km.$CUR_GDATE"
       if [ -s $OutFile ]; then
         fsize=`/usr/bin/stat -c "%s" $OutFile`
         if [ -z ${Size} ]; then
@@ -61,7 +61,7 @@ do
         exit 1
       fi
       #echo $OutFile
-      da=`/bin/date -d "${da} 1 day" +%Y%m%d`
+      CUR_GDATE=`/bin/date -d "${CUR_GDATE} 1 day" +%Y%m%d`
     done
   done
 done  

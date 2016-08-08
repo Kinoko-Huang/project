@@ -35,36 +35,31 @@ endif
 #  --- set the dates and times ----
 set BEG_GDATE   = `$CAMx_HOME/datelib/yyyyjjj2yyyymmdd $BEG_JDATE`
 set YES_BEG_GDATE = `$CAMx_HOME/datelib/ymd_prev $BEG_GDATE`
-echo "A"
 @ YES_JDATE = `$CAMx_HOME/datelib/yyyyjjj_plus_dd $CUR_JDATE -1` 
-echo "B"
-set YEAR = `$CAMx_HOME/datelib/j2g $CUR_JDATE | awk '{print $1}'`
-set MM   = `$CAMx_HOME/datelib/j2g $CUR_JDATE | awk '{print $2}'`
-set DD   = `$CAMx_HOME/datelib/j2g $CUR_JDATE | awk '{print $3}'`
-set CUR_GDATE = ${YEAR}${MM}${DD}
-set BDD  = $DD
-set BHH  = $HH
+set CUR_Y = `$CAMx_HOME/datelib/j2g $CUR_JDATE | awk '{print $1}'`
+set CUR_M   = `$CAMx_HOME/datelib/j2g $CUR_JDATE | awk '{print $2}'`
+set CUR_D   = `$CAMx_HOME/datelib/j2g $CUR_JDATE | awk '{print $3}'`
+set CUR_GDATE = ${CUR_Y}${CUR_M}${CUR_D}
+set INIT_H  = $INIT_H
 
-if ( $BHH == "00" ) then
-  set EHH = 24
+if ( $INIT_H == "00" ) then
+  set TOM_H = 24
   set TOM_GDATE = $CUR_GDATE
 else 
-  set EHH = $BHH
+  set TOM_H = $INIT_H
   set TOM_GDATE = `$CAMx_HOME/datelib/ymd_next $CUR_GDATE`
 endif
-echo "C"
-set EYEAR = `echo $TOM_GDATE | cut -c 1-4`
-set EMM   = `echo $TOM_GDATE | cut -c 5-6`
-set EDD   = `echo $TOM_GDATE | cut -c 7-8`
+set TOM_Y = `echo $TOM_GDATE | cut -c 1-4`
+set TOM_M   = `echo $TOM_GDATE | cut -c 5-6`
+set TOM_D   = `echo $TOM_GDATE | cut -c 7-8`
 
-set BHH   = `echo $BHH | awk '{printf("%2.2d",$1)}'`
-set EHH   = `echo $EHH | awk '{printf("%2.2d",$1)}'`
+set INIT_H   = `echo $INIT_H | awk '{printf("%2.2d",$1)}'`
+set TOM_H   = `echo $TOM_H | awk '{printf("%2.2d",$1)}'`
 
-set YEARm1 = `$CAMx_HOME/datelib/j2g $YES_JDATE | awk '{print $1}'`
-set MMm1   = `$CAMx_HOME/datelib/j2g $YES_JDATE | awk '{print $2}'`
-set DDm1   = `$CAMx_HOME/datelib/j2g $YES_JDATE | awk '{print $3}'`
-echo "D"
-set YES_GDATE = ${YEARm1}${MMm1}${DDm1}
+set YES_Y = `$CAMx_HOME/datelib/j2g $YES_JDATE | awk '{print $1}'`
+set YES_M   = `$CAMx_HOME/datelib/j2g $YES_JDATE | awk '{print $2}'`
+set YES_D   = `$CAMx_HOME/datelib/j2g $YES_JDATE | awk '{print $3}'`
+set YES_GDATE = ${YES_Y}${YES_M}${YES_D}
 
 set CUR_GDATE     = `echo $CUR_GDATE     | awk '{printf("%6.6d",$1)}'`
 set YES_GDATE = `echo $YES_GDATE | awk '{printf("%6.6d",$1)}'`
@@ -124,8 +119,8 @@ cat << ieof > CAMx.in
 
  Time_Zone        = 0,                 ! (0=UTC,5=EST,6=CST,7=MST,8=PST)
  Restart          = .${RESTART}.,
- Start_Date_Hour  = $YEAR,$MM,$BDD,${BHH}00,   ! (YYYY,MM,DD,HHmm)
- End_Date_Hour    = $EYEAR,$EMM,$EDD,${EHH}00,   ! (YYYY,MM,DD,HHmm)
+ Start_Date_Hour  = $CUR_Y,$CUR_M,$CUR_D,${INIT_H}00,   ! (YYYY,MM,DD,HHmm)
+ End_Date_Hour    = $TOM_Y,$TOM_M,$TOM_D,${TOM_H}00,   ! (YYYY,MM,DD,HHmm)
 
  Maximum_Timestep    = 15.,            ! minutes
  Met_Input_Frequency = 60.,            ! minutes

@@ -153,7 +153,7 @@ while ( $CUR_JDATE <= $END_JDATE )
    endsw
 
   ######## Run m3tshift to change bc time ############
-  ./run.change_bc${INIT_H}z_time.csh $CUR_JDATE $DATEDOW >& ../msg/log.m3tshift.bc.$CUR_JDATE
+  ./run.change_bc${BEG_H}z_time.csh $CUR_JDATE $DATEDOW >& ../msg/log.m3tshift.bc.$CUR_JDATE
 
   set INPUT_CMAQ_BCON  = $cwd/../Output/ICBC/BCON_COMBINE_$CUR_JDATE
   set OUTPUT_CAMx_BC   = $CAMx_HOME/inputs/icbc/bc.camx.${DOMAINS_RES}km.$CUR_JDATE.uam

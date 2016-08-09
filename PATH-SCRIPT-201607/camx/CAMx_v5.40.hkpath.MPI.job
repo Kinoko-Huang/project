@@ -40,20 +40,20 @@ set CUR_Y = `$CAMx_HOME/datelib/j2g $CUR_JDATE | awk '{print $1}'`
 set CUR_M   = `$CAMx_HOME/datelib/j2g $CUR_JDATE | awk '{print $2}'`
 set CUR_D   = `$CAMx_HOME/datelib/j2g $CUR_JDATE | awk '{print $3}'`
 set CUR_GDATE = ${CUR_Y}${CUR_M}${CUR_D}
-set INIT_H  = $INIT_H
+set BEG_H  = $BEG_H
 
-if ( $INIT_H == "00" ) then
+if ( $BEG_H == "00" ) then
   set TOM_H = 24
   set TOM_GDATE = $CUR_GDATE
 else 
-  set TOM_H = $INIT_H
+  set TOM_H = $BEG_H
   set TOM_GDATE = `$CAMx_HOME/datelib/ymd_next $CUR_GDATE`
 endif
 set TOM_Y = `echo $TOM_GDATE | cut -c 1-4`
 set TOM_M   = `echo $TOM_GDATE | cut -c 5-6`
 set TOM_D   = `echo $TOM_GDATE | cut -c 7-8`
 
-set INIT_H   = `echo $INIT_H | awk '{printf("%2.2d",$1)}'`
+set BEG_H   = `echo $BEG_H | awk '{printf("%2.2d",$1)}'`
 set TOM_H   = `echo $TOM_H | awk '{printf("%2.2d",$1)}'`
 
 set YES_Y = `$CAMx_HOME/datelib/j2g $YES_JDATE | awk '{print $1}'`
@@ -119,7 +119,7 @@ cat << ieof > CAMx.in
 
  Time_Zone        = 0,                 ! (0=UTC,5=EST,6=CST,7=MST,8=PST)
  Restart          = .${RESTART}.,
- Start_Date_Hour  = $CUR_Y,$CUR_M,$CUR_D,${INIT_H}00,   ! (YYYY,MM,DD,HHmm)
+ Start_Date_Hour  = $CUR_Y,$CUR_M,$CUR_D,${BEG_H}00,   ! (YYYY,MM,DD,HHmm)
  End_Date_Hour    = $TOM_Y,$TOM_M,$TOM_D,${TOM_H}00,   ! (YYYY,MM,DD,HHmm)
 
  Maximum_Timestep    = 15.,            ! minutes

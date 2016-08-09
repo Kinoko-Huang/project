@@ -1,0 +1,125 @@
+#!/bin/csh -f
+
+source ../../../domains_def.config
+
+#> define the machines that will run the application
+limit stacksize unlimited
+#cat << ieof > nodes 
+#hqlx103:16
+#ieof
+
+#setenv MPICH2BIN "/usr/local/pgi-cdk-8.0.5cos5/linux86-64/8.0/mpi2/mpich/bin"
+
+#> horizontal domain decomposition
+#setenv NPROCS "16" 
+#setenv NPCOL_NPROW "8 2"
+
+#> set the simulation period
+#set NEW_START = true       #always TRUE on first day
+#set CUR_JDATE = 2004245   #first day
+set CUR_JDATE = $argv[1]   #first day
+set DOMAINS_GRID = $argv[4]
+#set NEW_START  = false    #always FALSE for restart
+
+#> horizontal grid defn; check GRIDDESC file for GRID_NAME options
+set DOMAINS_RES = ${G_DOMAINS_RES[$DOMAINS_GRID]}
+setenv GRIDDESC $OPDIR/inputs/GRIDDESC 
+setenv GRID_NAME HKPATH_${DOMAINS_RES}KM 
+
+setenv KZMIN F
+
+#> output files and directories
+setenv M3OUT $MY_OUTPUT/$M3CASE/${DOMAINS_RES}km 
+mkdir -p $M3OUT/LOGS
+
+#> input files and directories
+setenv OCEANpath $OPDIR/inputs/ocean 
+setenv OCEANfile OCEANFILE_HK${DOMAINS_RES}km 
+
+if ($DOMAINS_GRID == 1) then
+  setenv GC_ICpath $argv[2]
+  setenv GC_ICfile $argv[3]
+else
+  setenv GC_ICpath $OPDIR/inputs/icbc/${DOMAINS_RES}km 
+  setenv GC_ICfile ICON_cb05cl_HKPATH_${DOMAINS_RES}KM_$BEG_JDATE
+endif
+setenv GC_BCpath $OPDIR/inputs/icbc/${DOMAINS_RES}km
+
+#setenv JVALpath $OPDIR/inputs/jproc/$YYYY
+setenv JVALpath $OPDIR/inputs/jproc
+
+setenv METpath $OPDIR/inputs/met/${DOMAINS_RES}km 
+
+setenv EMISpath $OPDIR/inputs/emiss/${DOMAINS_RES}km
+
+################
+#  master loop
+################
+
+#> start the mpd ring
+#$MPICH2BIN/mpdboot -r rsh -n 1 -f nodes --verbose
+
+rm -f CTM_LOG_* FLOOR_*
+
+#> find out the date for the previous day
+set YES_JDATE = `$PATH_SYSDIR/bin/yj_prev $CUR_JDATE 1`
+
+# check whether this is a cold start (first day of modeling)
+if ( $NEW_START == "true" ) then
+   set NEW_START = false
+else
+   setenv GC_ICpath $M3OUT
+   setenv GC_ICfile ${EXEC}_${M3EXTN}.CGRID.$YES_JDATE
+endif
+
+#> boundry conditons file
+if ($DOMAINS_GRID == 1) then
+  setenv GC_BCfile BCON_COMBINE_$CUR_JDATE
+else
+  setenv GC_BCfile BCON_cb05cl_HKPATH_${DOMAINS_RES}KM_$CUR_JDATE
+endif
+
+#> 7-level photolysis data w/ file header
+setenv JVALfile JTABLE_cb05cl_$CUR_JDATE
+
+set CUR_GDATE = `yyyyjjj2yyyymmdd $CUR_JDATE`
+
+#> met files
+setenv GC2file GRIDCRO2D.${DOMAINS_RES}km.$CUR_GDATE
+setenv GD2file GRIDDOT2D.${DOMAINS_RES}km.$CUR_GDATE
+setenv MC2file METCRO2D.${DOMAINS_RES}km.$CUR_GDATE
+setenv MD3file METDOT3D.${DOMAINS_RES}km.$CUR_GDATE
+setenv MC3file METCRO3D.${DOMAINS_RES}km.$CUR_GDATE
+setenv MB3file METBDY3D.${DOMAINS_RES}km.$CUR_GDATE
+
+#> emissions
+setenv EMISfile emiss_CB05.HongKong.${DOMAINS_RES}km_$CUR_JDATE.ncf 
+
+#> start the main cctm job
+set RUN_LOG = $M3OUT/LOGS/LOG.$APPL
+rm -f $RUN_LOG.$CUR_JDATE
+echo " "
+echo "LOG: $RUN_LOG.$CUR_JDATE"
+date
+echo "run run.cctm ..."
+
+./run.cctm.mpich2 $CUR_JDATE  >& $RUN_LOG.$CUR_JDATE
+if ( $status != 0 ) then
+  exit 1
+endif
+date
+
+#> check "inf" or "nan" in the LOG file
+set chk = `grep -aE "(inf|nan)" $RUN_LOG.$CUR_JDATE`
+if ( "$chk" != "" ) then
+  echo "ERROR: inf or nan occurred"
+  exit 1
+endif
+
+if ( ! -f $M3OUT/${EXEC}_${M3EXTN}.CONC.$CUR_JDATE ) then
+   echo 'run.cctm unsucessful, exiting...'
+   exit 1
+endif
+
+#> kill the mpd ring
+#$MPICH2BIN/mpdallexit

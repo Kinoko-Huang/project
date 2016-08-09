@@ -59,7 +59,7 @@ output BC file     |$CAMxDir/bc.camx.${DOMAINS_RES}km.$CUR_JDATE.uam
 iwst,iest,jsth,jnth|$iwest,$ieast,$jsouth,$jnorth
 mesh factor        |3
 make IC file?      |$ic
-time/date for IC   |${INIT_H}  $CUR_J
+time/date for IC   |${BEG_H}  $CUR_J
 output IC file     |$CAMxDir/icon.camx.${DOMAINS_RES}km.${BEG_JDATE}.bin
 diagnostic file #1 |msg/camx.${DOMAINS_RES}km.$CUR_JDATE.diag1
 diagnostic file #2 |msg/camx.${DOMAINS_RES}km.$CUR_JDATE.diag2

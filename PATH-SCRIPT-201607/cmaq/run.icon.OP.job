@@ -36,14 +36,14 @@
  #cd $BASE; date; set timestamp; cat $BASE/cfg.${CFG}; echo " "; set echo
  cd $BASE; date; set timestamp; echo " "; set echo
 
- set GRID = $argv[2]
- @ GRID_COARSE = $GRID - 1
+ set DOMAINS_GRID = $argv[2]
+ @ GRID_COARSE = $DOMAINS_GRID - 1
  set METIN_COARSE     = $OPDIR/inputs/met/${G_DOMAINS_RES[$GRID_COARSE]}km
- set METIN     = $OPDIR/inputs/met/${G_DOMAINS_RES[$GRID]}km
+ set METIN     = $OPDIR/inputs/met/${G_DOMAINS_RES[$DOMAINS_GRID]}km
 
  #set M3CONCIN = "/localdata/rkwok/cmaq/outputs/$run/27km"
  set M3CONCIN = "$CCTMOUTDIR/${G_DOMAINS_RES[$GRID_COARSE]}km"
- set OUTDIR   = "$OPDIR/inputs/icbc/${G_DOMAINS_RES[$GRID]}km"
+ set OUTDIR   = "$OPDIR/inputs/icbc/${G_DOMAINS_RES[$DOMAINS_GRID]}km"
  if ( ! -e $OUTDIR ) mkdir -p $OUTDIR
 
  set JDATE = $argv[1]
@@ -51,11 +51,11 @@
 
 #> horizontal grid defn; check GRIDDESC file for GRID_NAME options
  setenv GRIDDESC $OPDIR/inputs/GRIDDESC 
- setenv GRID_NAME HKPATH_${G_DOMAINS_RES[$GRID]}KM 
+ setenv GRID_NAME HKPATH_${G_DOMAINS_RES[$DOMAINS_GRID]}KM 
  setenv IOAPI_ISPH 19
 
 #> vertical layer defn
- setenv LAYER_FILE $METIN/METCRO3D.${G_DOMAINS_RES[$GRID]}km.$G_DAY
+ setenv LAYER_FILE $METIN/METCRO3D.${G_DOMAINS_RES[$DOMAINS_GRID]}km.$G_DAY
 
 ##############################################################################
 # This script to run the ICON preprocessor has two major sections;           #
@@ -137,12 +137,12 @@ set IC = m3conc       # use CMAQ CTM concentration files (nested runs)
     setenv PING_PDM_1
 
     setenv MET_CRO_3D_CRS $METIN_COARSE/METCRO3D.${G_DOMAINS_RES[$GRID_COARSE]}km.$G_DAY
-    setenv MET_CRO_3D_FIN $METIN/METCRO3D.${G_DOMAINS_RES[$GRID]}km.$G_DAY
+    setenv MET_CRO_3D_FIN $METIN/METCRO3D.${G_DOMAINS_RES[$DOMAINS_GRID]}km.$G_DAY
 
     setenv MECH_CONV_FILE
 
     setenv SDATE           ${DATE}
-    setenv STIME  ${HH}0000       
+    setenv STIME  ${INIT_H}0000       
 
     endif
 

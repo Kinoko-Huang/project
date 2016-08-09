@@ -18,9 +18,9 @@ Output3_init_time=`/bin/date -d "${INIT_TIME:0:8} ${INIT_TIME:8:2}:00:00 3 days 
 
 Prefix=CCTM_V5g_ebi_cb05cl_ae5_aq_mpich2
 
-JDay0=`${PATH_SYSDIR}/bin/ymd2yj ${INIT_TIME:0:8}`
+INIT_JDATE=`${PATH_SYSDIR}/bin/ymd2yj ${INIT_TIME:0:8}`
 if [ $FC_MODE -eq 1 ]; then
-  JDay0=`${PATH_SYSDIR}/bin/yj_prev $JDay0`
+  INIT_YES_JDATE=`${PATH_SYSDIR}/bin/yj_prev $INIT_JDATE`
 fi
 for Output_init_time in $Output1_init_time $Output2_init_time $Output3_init_time
 do
@@ -29,14 +29,14 @@ do
     echo "Output directory ${OutputDir} does not exist"
     continue
   fi
-for km in G_DOMAINS_RES_gov
-  files=$OutputDir/${km}km   
+for DOMAINS_RES in G_DOMAINS_RES_gov
+  files=$OutputDir/${DOMAINS_RES}km   
   if [ -z $files ]; then
-    echo "No valid CCTM_V5g_ebi_cb05cl_ae5_aq_mpi_pg64_mpich2....${JDay0} found in $OutputDir"
+    echo "No valid CCTM_V5g_ebi_cb05cl_ae5_aq_mpi_pg64_mpich2....${INIT_YES_JDATE} found in $OutputDir"
     continue
   fi
   do
-    CMAQ_output_dir=outputs/run.OP_mm5_cb05cl/${km}km
+    CMAQ_output_dir=outputs/run.OP_mm5_cb05cl/${DOMAINS_RES}km
     if [ ! -d $CMAQ_output_dir ]; then
       /bin/mkdir -p $CMAQ_output_dir || {
         echo "Failed to create $CMAQ_output_dir directory"

@@ -19,72 +19,68 @@ if ( ! $?NPCOL_NPROW ) then
 endif
 
 set INIT_TIME = $1
-setenv GREGBEGN `echo $INIT_TIME | cut -c 1-8`
-setenv GREGBEGN `/bin/date -d "${GREGBEGN} ${CTM_SKIP_N_DAYS} day" +%Y%m%d`
+setenv INIT_GDATE `echo $INIT_TIME | cut -c 1-8`
+setenv BEG_GDATE `/bin/date -d "${INIT_GDATE} ${CTM_SKIP_N_DAYS} day" +%Y%m%d`
 
 setenv MCIPDIR  $2        # Data under this directory should be YYYY/YYYYMM/YYYYMMDDhh/*km/
     
-echo MCIP Initial Date: $GREGBEGN
+echo MCIP Initial Date: $BEG_GDATE
 
 setenv OPDIR `/bin/pwd`
-echo OPDIR=$OPDIR
 setenv UTILDIR $OPDIR/utils
-echo UTILDIR=$UTILDIR
 setenv INDIR $OPDIR/inputs
+echo OPDIR=$OPDIR
+echo UTILDIR=$UTILDIR
 echo INDIR=$INDIR
 
+#> set the scenario
+setenv M3PLAN  HK
+setenv M3CASE run.OP_mm5_cb05cl
+setenv CHEM  cb05cl
+setenv M3GRID 04
+setenv M3VLEV 19
+setenv M3EXTN mpich2
+
+#> executable
+#setenv APPL v47_ebi_cb05cl_ae5_aq_mpi_pg64
+setenv APPL V5g_ebi_cb05cl_ae5_aq
+setenv EXEC CCTM_$APPL
+
 # set beginning time - either 00 or 12
-#setenv HH 12
-setenv HH `echo $INIT_TIME | cut -c 9-10`
-echo HH=$HH
+setenv INIT_H `echo $INIT_TIME | cut -c 9-10`
+echo INIT_H=$INIT_H
 
 #set output directory
 setenv M3CASE run.OP_mm5_cb05cl
 setenv CCTMOUTDIR $OPDIR/outputs/$M3CASE
 
-setenv JULIBEGN `$UTILDIR/datelib/yyyymmdd2yyyyjjj $GREGBEGN`
-#setenv JULILAST `expr "$JULIBEGN" \+ "${CTM_SIM_N_DAYS}" \- 1`
+setenv BEG_JDATE `$UTILDIR/datelib/yyyymmdd2yyyyjjj $BEG_GDATE`
 set atmp = `expr ${CTM_SIM_N_DAYS} \- 1`
-setenv  JULILAST `$PATH_SYSDIR/bin/yj_next $JULIBEGN $atmp`
+setenv  END_JDATE `$PATH_SYSDIR/bin/yj_next $BEG_JDATE $atmp`
+echo BEG_JDATE=$BEG_JDATE
+echo END_JDATE=$END_JDATE
+echo BEG_GDATE=$BEG_GDATE
 
-setenv GREGLAST `$UTILDIR/datelib/yyyyjjj2yyyymmdd $JULIBEGN`
-#setenv JULIPREV `expr "$JULIBEGN" \- "${CTM_SKIP_N_DAYS}"`
-setenv  JULIPREV `$PATH_SYSDIR/bin/yj_prev $JULIBEGN ${CTM_SKIP_N_DAYS}`
-
-echo JULIBEGN=$JULIBEGN
-echo JULILAST=$JULILAST
-echo GREGBEGN=$GREGBEGN
-echo GREGLAST=$GREGLAST
-
-setenv GREGPREV `$UTILDIR/datelib/yyyyjjj2yyyymmdd $JULIPREV`
-echo JULIPREV=$JULIPREV
-echo GREGPREV=$GREGPREV
-
-#setenv YYYY `echo $GREGBEGN | cut -c1-4`
-setenv YYYY `echo $GREGPREV | cut -c1-4`
-setenv MM `echo $GREGPREV | cut -c5-6`
-setenv DD `echo $GREGPREV | cut -c7-8`
-
-echo YYYY=$YYYY
-echo MM=$MM
-echo DD=$DD
+setenv INIT_Y `echo $INIT_GDATE | cut -c1-4`
+setenv INIT_M `echo $INIT_GDATE | cut -c5-6`
+echo INIT_Y=$INIT_Y
+echo INIT_M=$INIT_M
 
 ####LINK MCIP TO INPUT##################################
-
 set LINKMCIP = 1
 if ( "$LINKMCIP" == 1 ) then
   #setenv MCIPDIR ~pathop/data/mcip
   echo LINK MCIP to INPUT
-  echo MCIP directory $MCIPDIR/$YYYY/$YYYY$MM/${YYYY}${MM}${DD}${HH}
-  foreach DMAIN ( $G_DOMAINS_RES )
-    /bin/ln -sf $MCIPDIR/$YYYY/$YYYY$MM/{$YYYY}{$MM}{$DD}{$HH}/${DMAIN}km/GRID* $INDIR/met/${DMAIN}km/
+  echo MCIP directory $MCIPDIR/$INIT_Y/$INIT_Y$INIT_M/${INIT_TIME}
+  foreach DOMAINS_RES ( $G_DOMAINS_RES )
+    /bin/ln -sf $MCIPDIR/$INIT_Y/$INIT_Y$INIT_M/$INIT_TIME/${DOMAINS_RES}km/GRID* $INDIR/met/${DOMAINS_RES}km/
     if ( $status != 0 ) then
-      echo "Failed: /bin/ln -sf $MCIPDIR/$YYYY/$YYYY$MM/${YYYY}${MM}${DD}${HH}/${DMAIN}km/GRID* $INDIR/met/${DMAIN}km/"
+      echo "Failed: /bin/ln -sf $MCIPDIR/$INIT_Y/$INIT_Y$INIT_M/${INIT_TIME}/${DOMAINS_RES}km/GRID* $INDIR/met/${DOMAINS_RES}km/"
       exit 1
     endif
-    /bin/ln -sf $MCIPDIR/$YYYY/$YYYY$MM/{$YYYY}{$MM}{$DD}{$HH}/${DMAIN}km/MET* $INDIR/met/${DMAIN}km/
+    /bin/ln -sf $MCIPDIR/$INIT_Y/$INIT_Y$INIT_M/$INIT_TIME/${DOMAINS_RES}km/MET* $INDIR/met/${DOMAINS_RES}km/
     if ( $status != 0 ) then
-      echo "Failed: /bin/ln -sf $MCIPDIR/$YYYY/$YYYY$MM/${YYYY}${MM}${DD}${HH}/${DMAIN}km/MET* $INDIR/met/${DMAIN}km/"
+      echo "Failed: /bin/ln -sf $MCIPDIR/$INIT_Y/$INIT_Y$INIT_M/${INIT_TIME}/${DOMAINS_RES}km/MET* $INDIR/met/${DOMAINS_RES}km/"
       exit 1
     endif
   end
@@ -92,43 +88,42 @@ endif
 
 #finished linking mcip
 cd $OPDIR
-
 ####PREPARE JPROC INPUT#################################
 
 set DOJPROC = 1
 if ( "$DOJPROC" == 1 ) then
   echo "PREPARE_JPROC"
   cd $OPDIR/preproc/jproc
-  echo ./run.OP.cb05cl.jproc $JULIBEGN $JULILAST 
-  ./run.OP.cb05cl.jproc $JULIBEGN $JULILAST 
+  echo ./run.OP.cb05cl.jproc $BEG_JDATE $END_JDATE 
+  ./run.OP.cb05cl.jproc $BEG_JDATE $END_JDATE 
   if ( $status != 0 ) then
-    echo Failed ./run.OP.cb05cl.jproc $JULIBEGN $JULILAST
+    echo Failed ./run.OP.cb05cl.jproc $BEG_JDATE $END_JDATE
     exit 1
   endif
-
+  
   #finished running jproc...
   cd $OPDIR
 
   #move jtable to input folder
-  set yr0 = `echo $JULIBEGN | cut -c1-4`
-  set yr1 = `echo $JULILAST | cut -c1-4`
+  set BEG_Y = `echo $BEG_JDATE | cut -c1-4`
+  set END_Y = `echo $END_JDATE | cut -c1-4`
   /bin/mkdir -p $INDIR/jproc
-  set yr = $yr0
-  while ( "$yr" <= "$yr1" )
-    #mv -v $OPDIR/preproc/jproc/$yr/JTABLE* $INDIR/jproc/$YYYY/
-    #mv -v $OPDIR/preproc/jproc/$yr/JTABLE* $INDIR/jproc/
-    /usr/bin/find $OPDIR/preproc/jproc/$yr -type f -name "JTABLE*" -exec /bin/mv -v {} $INDIR/jproc/ \;
+  set CUR_Y = $BEG_Y
+  while ( "$CUR_Y" <= "$END_Y" )
+    #mv -v $OPDIR/preproc/jproc/$CUR_Y/JTABLE* $INDIR/jproc/$INIT_Y/
+    #mv -v $OPDIR/preproc/jproc/$CUR_Y/JTABLE* $INDIR/jproc/
+    /usr/bin/find $OPDIR/preproc/jproc/$CUR_Y -type f -name "JTABLE*" -exec /bin/mv -v {} $INDIR/jproc/ \;
     #if ( $status != 0 ) then
-    #  echo Failed: mv $OPDIR/preproc/jproc/$yr/JTABLE+ $INDIR/jproc/
+    #  echo Failed: mv $OPDIR/preproc/jproc/$CUR_Y/JTABLE+ $INDIR/jproc/
     #  exit 1
     #endif
-    set yr = `expr $yr + 1`
+    set CUR_Y = `expr $CUR_Y + 1`
   end
 endif
 
 ####CHOOSE SMOKE EMISS TO INPUT###########################
 
-if ( "$HH" == "12" ) then
+if ( "$INIT_H" == "12" ) then
   set hour12z = "_12z"
 else
   set hour12z = ""
@@ -140,55 +135,54 @@ if ( "$PICKEMIS" == 1 ) then
   echo CHOOSE GENERIC EMISS TO INPUT
   # Pre-generated emission data
   setenv EGEN_DIR $PATH_SYSDIR/static_data/CMAQ/emiss${hour12z}-v2
-  set IDATE = $JULIBEGN
-  while ("$IDATE" <= "$JULILAST" )
-    setenv IGREG `$UTILDIR/datelib/yyyyjjj2yyyymmdd $IDATE`
-    setenv IDOW `$UTILDIR/datelib/yyyymmdd2dow $IGREG`
-    foreach DMAIN ( $G_DOMAINS_RES )
+  set CUR_JDATE = $BEG_JDATE
+  while ("$CUR_JDATE" <= "$END_JDATE" )
+    setenv CUR_GDATE `$UTILDIR/datelib/yyyyjjj2yyyymmdd $CUR_JDATE`
+    setenv IDOW `$UTILDIR/datelib/yyyymmdd2dow $CUR_GDATE`
+    foreach DOMAINS_RES ( $G_DOMAINS_RES )
       switch ( $IDOW )
       case Sat:
-        setenv INFILE ${EGEN_DIR}/${DMAIN}km/merged/emiss_CB05.HongKong.${DMAIN}km_Sat${hour12z}.ncf
+        setenv INFILE ${EGEN_DIR}/${DOMAINS_RES}km/merged/emiss_CB05.HongKong.${DOMAINS_RES}km_Sat${hour12z}.ncf
         breaksw
       case Sun:
-        setenv INFILE ${EGEN_DIR}/${DMAIN}km/merged/emiss_CB05.HongKong.${DMAIN}km_Sun${hour12z}.ncf
+        setenv INFILE ${EGEN_DIR}/${DOMAINS_RES}km/merged/emiss_CB05.HongKong.${DOMAINS_RES}km_Sun${hour12z}.ncf
         breaksw
       case Mon:
-        setenv INFILE ${EGEN_DIR}/${DMAIN}km/merged/emiss_CB05.HongKong.${DMAIN}km_Mon${hour12z}.ncf
+        setenv INFILE ${EGEN_DIR}/${DOMAINS_RES}km/merged/emiss_CB05.HongKong.${DOMAINS_RES}km_Mon${hour12z}.ncf
         breaksw
       case Tue:
-        setenv INFILE ${EGEN_DIR}/${DMAIN}km/merged/emiss_CB05.HongKong.${DMAIN}km_Tue${hour12z}.ncf
+        setenv INFILE ${EGEN_DIR}/${DOMAINS_RES}km/merged/emiss_CB05.HongKong.${DOMAINS_RES}km_Tue${hour12z}.ncf
         breaksw
       case Wed:
-        setenv INFILE ${EGEN_DIR}/${DMAIN}km/merged/emiss_CB05.HongKong.${DMAIN}km_Wed${hour12z}.ncf
+        setenv INFILE ${EGEN_DIR}/${DOMAINS_RES}km/merged/emiss_CB05.HongKong.${DOMAINS_RES}km_Wed${hour12z}.ncf
         breaksw
       case Thu:
-        setenv INFILE ${EGEN_DIR}/${DMAIN}km/merged/emiss_CB05.HongKong.${DMAIN}km_Thu${hour12z}.ncf
+        setenv INFILE ${EGEN_DIR}/${DOMAINS_RES}km/merged/emiss_CB05.HongKong.${DOMAINS_RES}km_Thu${hour12z}.ncf
         breaksw
       case Fri:
-        setenv INFILE ${EGEN_DIR}/${DMAIN}km/merged/emiss_CB05.HongKong.${DMAIN}km_Fri${hour12z}.ncf
+        setenv INFILE ${EGEN_DIR}/${DOMAINS_RES}km/merged/emiss_CB05.HongKong.${DOMAINS_RES}km_Fri${hour12z}.ncf
         breaksw
       endsw
-      setenv OUTFILE $INDIR/emiss/${DMAIN}km/emiss_CB05.HongKong.${DMAIN}km_${IDATE}.ncf
+      setenv OUTFILE $INDIR/emiss/${DOMAINS_RES}km/emiss_CB05.HongKong.${DOMAINS_RES}km_${CUR_JDATE}.ncf
       cd $UTILDIR/m3tshift
-      echo Run ./run.m3tshift.csh $IDATE $INFILE $OUTFILE
-      ./run.m3tshift.csh $IDATE $INFILE $OUTFILE
+      echo Run ./run.m3tshift.csh $CUR_JDATE $INFILE $OUTFILE
+      ./run.m3tshift.csh $CUR_JDATE $INFILE $OUTFILE
       cd $OPDIR
-    end #DMAIN
-    #@ IDATE++
-    set IDATE = `$PATH_SYSDIR/bin/yj_next $IDATE 1`
-  end
+    end #end of foreach DOMAINS_RES
+    set CUR_JDATE = `$PATH_SYSDIR/bin/yj_next $CUR_JDATE 1`
+  end #end of while CUR_JDATE
 else
-  set IDATE = $JULIBEGN
-  setenv OUTFILE $INDIR/emiss/${DMAIN}km/emiss_CB05.HongKong.${DMAIN}km_${IDATE}.ncf  #(point to our SMOKE-cmaqfc output file)
+  set CUR_JDATE = $BEG_JDATE
+  setenv OUTFILE $INDIR/emiss/${DOMAINS_RES}km/emiss_CB05.HongKong.${DOMAINS_RES}km_${CUR_JDATE}.ncf  #(point to our SMOKE-cmaqfc output file)
   echo emiss OUTFILE=$OUTFILE
 endif
 
 cd $OPDIR
 
-########CHOOSE ICBC for 27km DOMAIN################
+########CHOOSE ICBC for First Grid DOMAIN################
 echo CHOOSE ICBC for outmost DOMAIN
 setenv WCHICBC PATHICBC
-if ( "$HH" == "12" ) then
+if ( "$INIT_H" == "12" ) then
   unsetenv WCHICBC
   setenv WCHICBC PATHICBC_12z
 endif
@@ -196,46 +190,46 @@ endif
 set PICKICBC = 1
 if ( "$PICKICBC" == 1 ) then
   #Determine which season of IC BC to be used
-  if ( "$MM" == "12" | "$MM" == "01" | "$MM" == "02" ) then
+  if ( "$INIT_M" == "12" | "$INIT_M" == "01" | "$INIT_M" == "02" ) then
     setenv ICBCDIR $OPDIR/preproc/$WCHICBC/200601
     setenv SEAS Winter
     #gunzip $ICBCDIR/ICON_COMBINE_2006002.gz
-    cp $ICBCDIR/ICON_COMBINE_2006002 $INDIR/icbc/27km/
-    setenv ICON_path $INDIR/icbc/27km
+    cp $ICBCDIR/ICON_COMBINE_2006002 $INDIR/icbc/${G_DOMAINS_RES[1]}km/
+    setenv ICON_path $INDIR/icbc/${G_DOMAINS_RES[1]}km
     setenv ICON_file ICON_COMBINE_2006002
     #gzip $ICBCDIR/ICON_COMBINE_2006002
-  else if ( "$MM" == "03" | "$MM" == "04" | "$MM" == "05" ) then
+  else if ( "$INIT_M" == "03" | "$INIT_M" == "04" | "$INIT_M" == "05" ) then
     setenv ICBCDIR $OPDIR/preproc/$WCHICBC/200604
     setenv SEAS Spring
     #gunzip $ICBCDIR/ICON_COMBINE_2006091.gz
-    cp $ICBCDIR/ICON_COMBINE_2006091 $INDIR/icbc/27km/
-    setenv ICON_path $INDIR/icbc/27km
+    cp $ICBCDIR/ICON_COMBINE_2006091 $INDIR/icbc/${G_DOMAINS_RES[1]}km/
+    setenv ICON_path $INDIR/icbc/${G_DOMAINS_RES[1]}km
     setenv ICON_file ICON_COMBINE_2006091
     #gzip $ICBCDIR/ICON_COMBINE_2006091
-  else if ( "$MM" == "06" | "$MM" == "07" | "$MM" == "08" ) then
+  else if ( "$INIT_M" == "06" | "$INIT_M" == "07" | "$INIT_M" == "08" ) then
     setenv ICBCDIR $OPDIR/preproc/$WCHICBC/200607
     setenv SEAS Summer
     #gunzip $ICBCDIR/ICON_COMBINE_2006182.gz
-    cp $ICBCDIR/ICON_COMBINE_2006182 $INDIR/icbc/27km/
-    setenv ICON_path $INDIR/icbc/27km
+    cp $ICBCDIR/ICON_COMBINE_2006182 $INDIR/icbc/${G_DOMAINS_RES[1]}km/
+    setenv ICON_path $INDIR/icbc/${G_DOMAINS_RES[1]}km
     setenv ICON_file ICON_COMBINE_2006182
     #gzip $ICBCDIR/ICON_COMBINE_2006182
-  else if ( "$MM" == "09" | "$MM" == "10" | "$MM" == "11" ) then
+  else if ( "$INIT_M" == "09" | "$INIT_M" == "10" | "$INIT_M" == "11" ) then
     setenv ICBCDIR $OPDIR/preproc/$WCHICBC/200610
     setenv SEAS Autumn
     #gunzip $ICBCDIR/ICON_COMBINE_2006274.gz
-    cp $ICBCDIR/ICON_COMBINE_2006274 $INDIR/icbc/27km/
-    setenv ICON_path $INDIR/icbc/27km
+    cp $ICBCDIR/ICON_COMBINE_2006274 $INDIR/icbc/${G_DOMAINS_RES[1]}km/
+    setenv ICON_path $INDIR/icbc/${G_DOMAINS_RES[1]}km
     setenv ICON_file ICON_COMBINE_2006274
     #gzip $ICBCDIR/ICON_COMBINE_2006274
   endif 
 
   #Match DOW and unzip the ID'ed IC BC
   #Change time stamp and put them into the input folder
-  set IDATE = $JULIBEGN
-  while ( "$IDATE" <= "$JULILAST" )
-    setenv IGREG `$UTILDIR/datelib/yyyyjjj2yyyymmdd $IDATE`
-    setenv IDOW `$UTILDIR/datelib/yyyymmdd2dow $IGREG`
+  set CUR_JDATE = $BEG_JDATE
+  while ( "$CUR_JDATE" <= "$END_JDATE" )
+    setenv CUR_GDATE `$UTILDIR/datelib/yyyyjjj2yyyymmdd $CUR_JDATE`
+    setenv IDOW `$UTILDIR/datelib/yyyymmdd2dow $CUR_GDATE`
   
     switch ( $IDOW )
     case Sat:
@@ -353,96 +347,93 @@ if ( "$PICKICBC" == 1 ) then
     endsw
     
     setenv INFILE $ICBCDIR/BCON_COMBINE_${DATEDOW}
-    if ( "$HH" == "12" ) then
+    if ( "$INIT_H" == "12" ) then
       unsetenv INFILE
       setenv INFILE $ICBCDIR/BCON_COMBINE_${DATEDOW}_12z
     endif
-    setenv OUTFILE $INDIR/icbc/27km/BCON_COMBINE_$IDATE
+    setenv OUTFILE $INDIR/icbc/${G_DOMAINS_RES[1]}km/BCON_COMBINE_$CUR_JDATE
     cd $UTILDIR/m3tshift
-    ./run.m3tshift.csh $IDATE $INFILE $OUTFILE
+    ./run.m3tshift.csh $CUR_JDATE $INFILE $OUTFILE
     cd $OPDIR
     #gzip $INFILE
-    #@ IDATE++
-    set IDATE = `$PATH_SYSDIR/bin/yj_next $IDATE 1`
+    set CUR_JDATE = `$PATH_SYSDIR/bin/yj_next $CUR_JDATE 1`
   end
 endif
 cd $OPDIR
 
 ########RUN CMAQ ON NESTING DOMAINS################
 echo RUN CMAQ ON NESTING DOMAINS
-set IDATE = $JULIBEGN
-while ( "$IDATE" <= "$JULILAST" )
-  setenv IGREG `$UTILDIR/datelib/yyyyjjj2yyyymmdd $IDATE`
-  set GRID = 1
-  foreach DMAIN ( $G_DOMAINS_RES )  
-    setenv MIDNAME hk${DMAIN}
-    echo NOW IS RUNNING BCON ON ${DMAIN}km at $IDATE ...
+set CUR_JDATE = $BEG_JDATE
+while ( "$CUR_JDATE" <= "$END_JDATE" )
+  setenv CUR_GDATE `$UTILDIR/datelib/yyyyjjj2yyyymmdd $CUR_JDATE`
+  set YES_JDATE = `$PATH_SYSDIR/bin/yj_prev $CUR_JDATE 1`
+  set DOMAINS_GRID = 1
+  foreach DOMAINS_RES ( $G_DOMAINS_RES )  
+    setenv MIDNAME hk${DOMAINS_RES}
+    echo NOW IS RUNNING BCON ON ${DOMAINS_RES}km at $CUR_JDATE ...
 
     # run bcon
-    if ( "$GRID" != "1" ) then
+    if ( "$DOMAINS_GRID" != "1" ) then
       cd $OPDIR/preproc/bcon
-       ./run.bcon.OP.job $IDATE $GRID
+       ./run.bcon.OP.job $CUR_JDATE $DOMAINS_GRID
       if ( $status != 0 ) then
-        echo Failed: ./run.bcon.OP.job $IDATE ${DMAIN}km
+        echo Failed: ./run.bcon.OP.job $CUR_JDATE ${DOMAINS_RES}km
         exit 1
       endif
     endif
 
-    echo NOW IS RUNNING ICON ON $DMAIN at $IDATE ...
+    echo NOW IS RUNNING ICON ON $DOMAINS_RES at $CUR_JDATE ...
     # run icon
-    if ( "$GRID" != "1" ) then
-      if ( "$IDATE" == "$JULIBEGN" ) then
+    if ( "$DOMAINS_GRID" != "1" ) then
+      if ( "$CUR_JDATE" == "$BEG_JDATE" ) then
         cd $OPDIR/preproc/icon
-         ./run.icon.OP.job $IDATE $GRID
+         ./run.icon.OP.job $CUR_JDATE $DOMAINS_GRID
         if ( $status != 0 ) then
-          echo Failed: ./run.icon.OP.job $IDATE ${DMAIN}km
+          echo Failed: ./run.icon.OP.job $CUR_JDATE ${DOMAINS_RES}km
           exit 1
         endif
       endif
     endif
-    echo NOW IS RUNNING CCTM ON ${DMAIN}km at $IDATE ...
+
+    echo NOW IS RUNNING CCTM ON ${DOMAINS_RES}km at $CUR_JDATE ...
     cd $OPDIR
     # run cmaq
-#    if ( $GRID == 1 ) then
     cd $OPDIR/runfiles/runfiles
-    if ( $CTM_COLD_START == 1 && "$IDATE" == "$JULIBEGN" ) then
-      echo "CMAQ cold start domain = ${DMAIN}km and date = $JULIBEGN"
-      echo Run ./run.OP.$MIDNAME.mpich2_cold $IDATE $ICON_path $ICON_file
-      ./run.OP.$MIDNAME.mpich2_cold $IDATE $ICON_path $ICON_file $GRID
-      if ( $status != 0 ) then
-        echo Failed: ./run.OP.$MIDNAME.mpich2_cold $IDATE $ICON_path $ICON_file
-        exit 1
-      endif
+    set M3OUT = $MY_OUTPUT/$M3CASE/${DOMAINS_RES}km
+    if ( $CTM_COLD_START == 1 && "$CUR_JDATE" == "$BEG_JDATE" ) then
+      setenv NEW_START true
     else
-      echo Run ./run.OP.$MIDNAME.mpich2 $IDATE
-      ./run.OP.$MIDNAME.mpich2 $IDATE $GRID
-      if ( $status != 0 ) then
-        echo Failed: ./run.OP.$MIDNAME.mpich2 $IDATE
-        exit 1
-      endif
+      setenv NEW_START false  
     endif
-#    else
-#       cd $OPDIR/runfiles/refined_grid
-#        if ( $CTM_COLD_START == 1 && "$IDATE" == "$JULIBEGN" ) then
-#          echo "CMAQ cold start domain = ${DMAIN}km and date = $JULIBEGN"
-#          ./run.OP.mpich2_cold $IDATE $DMAIN
-#          if ( $status != 0 ) then
-#            echo Failed: ./run.OP.mpich2_cold $IDATE ${DMAIN}km
-#            exit 1
-#          endif
-#        else
-#          echo Run ./run.OP.mpich2 $IDATE ${DMAIN}km
-#          ./run.OP.mpich2 $IDATE $DMAIN
-#          if ( $status != 0 ) then
-#            echo Failed: ./run.OP.mpich2 $IDATE ${DMAIN}km
-#            exit 1
-#          endif
+    echo "CMAQ cold start domain = ${DOMAINS_RES}km and date = $CUR_JDATE"
+    echo Run ./run.OP.mpich2_cold $CUR_JDATE $ICON_path $ICON_file
+    ./run.OP.mpich2-test $CUR_JDATE $ICON_path $ICON_file $DOMAINS_GRID
+    if ( $status != 0 ) then
+      echo Failed: ./run.OP.mpich2_cold $CUR_JDATE $ICON_path $ICON_file
+      exit 1
+    endif
+#      if (! -f $M3OUT/${EXEC}_${M3EXTN}.CONC.$YES_JDATE && $CTM_COLD_START == 0 ) then
+#        setenv NEW_START  true
+#        echo "CMAQ cold start domain = ${DOMAINS_RES}km and date = $BEG_JDATE"
+#        echo Run ./run.OP.mpich2_cold $CUR_JDATE $ICON_path $ICON_file
+#        ./run.OP.mpich2_cold $CUR_JDATE $ICON_path $ICON_file $DOMAINS_GRID
+#        if ( $status != 0 ) then
+#          echo Failed: ./run.OP.mpich2_cold $CUR_JDATE $ICON_path $ICON_file
+#          exit 1
 #        endif
-#    endif
-    @ GRID ++
-    end  # foreach DMAIN
-    #@ IDATE++
-    set IDATE = `$PATH_SYSDIR/bin/yj_next $IDATE 1`
+#      else  
+#        stenv NEW_START  false
+#        echo Run ./run.OP.mpich2 $CUR_JDATE
+#        ./run.OP.mpich2 $CUR_JDATE $DOMAINS_GRID
+#        if ( $status != 0 ) then
+#          echo Failed: ./run.OP.mpich2 $CUR_JDATE
+#          exit 1
+#        endif
+#      endif
+    @ DOMAINS_GRID ++
+    end  # foreach DOMAINS_RES
+    #@ CUR_JDATE++
+    set CUR_JDATE = `$PATH_SYSDIR/bin/yj_next $CUR_JDATE 1`
   end #end of while 
   
 ########AT THE VERY END############################

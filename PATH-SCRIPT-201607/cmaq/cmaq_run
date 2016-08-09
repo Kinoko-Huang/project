@@ -65,31 +65,10 @@ Ncpu=`$PATH_SYSDIR/bin/mpi_total_cpus` || {
   exit 1
 }
 
-/bin/cp ${MPIHostFile} $MYDIR/runfiles/first_grid/nodes  || {
-  $ECHO "Failed to copy ${MPIHostFile} to $MYDIR/runfiles/first_grid/nodes"
+/bin/cp ${MPIHostFile} $MYDIR/runfiles/runfiles/nodes  || {
+  $ECHO "Failed to copy ${MPIHostFile} to $MYDIR/runfiles/runfiles/nodes"
   exit1
   }
-
-/bin/cp ${MPIHostFile} $MYDIR/runfiles/refined_grid/nodes  || {
-  $ECHO "Failed to copy ${MPIHostFile} to $MYDIR/runfiles/refined_grid/nodes"
-  exit1
-  }
-#/bin/cp ${MPIHostFile} $MYDIR/runfiles/1km/nodes  || {
-#  $ECHO "Failed to copy ${MPIHostFile} to $MYDIR/runfiles/1km/nodes"
-#  exit 1
-#}
-#/bin/cp ${MPIHostFile} $MYDIR/runfiles/3km/nodes  || {
-#  $ECHO "Failed to copy ${MPIHostFile} to $MYDIR/runfiles/3km/nodes"
-#  exit 1
-#}
-#/bin/cp ${MPIHostFile} $MYDIR/runfiles/9km/nodes  || {
-#  $ECHO "Failed to copy ${MPIHostFile} to $MYDIR/runfiles/9km/nodes"
-#  exit 1
-#}
-#/bin/cp ${MPIHostFile} $MYDIR/runfiles/27km/nodes || {
-#  $ECHO "Failed to copy ${MPIHostFile} to $MYDIR/runfiles/27km/nodes"
-#  exit 1
-#}
 
 export NPROCS="$Ncpu"
 let "NPCOL = NPROCS / 2"

@@ -5,12 +5,12 @@ set END_GTIME = $argv[2]
 set BEG_Y = `echo $BEG_GTIME | cut -c 1-4`
 set BEG_M   = `echo $BEG_GTIME | cut -c 5-6`
 set BEG_D   = `echo $BEG_GTIME | cut -c 7-8`
-setenv INIT_H  `echo $BEG_GTIME | cut -c 9-10`
+setenv BEG_H  `echo $BEG_GTIME | cut -c 9-10`
 set END_Y = `echo $END_GTIME | cut -c 1-4`
 set END_M   = `echo $END_GTIME |cut -c 5-6`
 set END_D   = `echo $END_GTIME |cut -c 7-8`
 
-source setcase.whole.${INIT_H}z.txt
+source setcase.whole.${BEG_H}z.txt
 source ../domains_def.config
 
 set BEG_JDATE = `$CAMx_HOME/datelib/g2j $BEG_Y $BEG_M $BEG_D`
@@ -43,11 +43,11 @@ echo $BEG_JDATE $END_JDATE
   cd $AHOMAP/work
   set DOMAINS_GRID = 1
   foreach DOMAINS_RES ($G_DOMAINS_RES)
-    csh -f $AHOMAP/work/ahomap.hk${INIT_H}z.job $BEG_JDATE $END_JDATE $DOMAINS_GRID $DOMAINS_RES
+    csh -f $AHOMAP/work/ahomap.hk${BEG_H}z.job $BEG_JDATE $END_JDATE $DOMAINS_GRID $DOMAINS_RES
     @ DOMAINS_GRID ++
   end
   if ( $status != 0) then
-    echo "ERROR: Run ahomap.hk${INIT_H}z.*.job failed"
+    echo "ERROR: Run ahomap.hk${BEG_H}z.*.job failed"
     echo "ERROR in step 3 AHOMAP"
     goto error
   else

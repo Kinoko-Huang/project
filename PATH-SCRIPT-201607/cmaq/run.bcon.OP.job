@@ -21,10 +21,10 @@
 
  source ../../../domains_def.config
  
- set GRID = $argv[2]
- @ GRID_COARSE = $GRID - 1
+ set DOMAINS_GRID = $argv[2]
+ @ GRID_COARSE = $DOMAINS_GRID - 1
  set METIN_COARSE     = $OPDIR/inputs/met/${G_DOMAINS_RES[$GRID_COARSE]}km 
- set METIN     = $OPDIR/inputs/met/${G_DOMAINS_RES[$GRID]}km 
+ set METIN     = $OPDIR/inputs/met/${G_DOMAINS_RES[$DOMAINS_GRID]}km 
  set APPL     = cb05cl
  set CFG      = V5g_cb05cl_ae5 
  set EXEC     = BCON_${CFG}
@@ -48,14 +48,14 @@
 
  #set M3CONCIN = "/localdata/rkwok/cmaq/outputs/$run/27km"
  set M3CONCIN = "$CCTMOUTDIR/${G_DOMAINS_RES[$GRID_COARSE]}km"
- set OUTDIR   = "$OPDIR/inputs/icbc/${G_DOMAINS_RES[$GRID]}km"
+ set OUTDIR   = "$OPDIR/inputs/icbc/${G_DOMAINS_RES[$DOMAINS_GRID]}km"
  if ( ! -e $OUTDIR ) mkdir -p $OUTDIR
  
-set JDATE = $argv[1]
+set CUR_JDATE = $argv[1]
 
-#while ($JDATE <= 2004286)
+#while ($CUR_JDATE <= 2004286)
 
- set G_DAY = `$UTILDIR/datelib/yyyyjjj2yyyymmdd $JDATE`
+ set G_DAY = `$UTILDIR/datelib/yyyyjjj2yyyymmdd $CUR_JDATE`
  setenv NPCOL_NPROW "1 1"
 
 #> Set the working directory:
@@ -67,11 +67,11 @@ set JDATE = $argv[1]
 
 #> horizontal grid defn; check GRIDDESC file for GRID_NAME options
  setenv GRIDDESC $OPDIR/inputs/GRIDDESC 
- setenv GRID_NAME HKPATH_${G_DOMAINS_RES[$GRID]}KM 
+ setenv GRID_NAME HKPATH_${G_DOMAINS_RES[$DOMAINS_GRID]}KM 
  setenv IOAPI_ISPH 19
 
 #> vertical layer defn
- setenv LAYER_FILE $METIN/METCRO3D.${G_DOMAINS_RES[$GRID]}km.$G_DAY 
+ setenv LAYER_FILE $METIN/METCRO3D.${G_DOMAINS_RES[$DOMAINS_GRID]}km.$G_DAY 
 
 # set the path for the output file containing the BC's
 
@@ -95,7 +95,7 @@ set BC = m3conc       # use CMAQ CTM concentration files (nested runs)
     setenv BNDY_CONC_1    "$OUTDIR/BCON_${APPL}_${GRID_NAME}_profile -v"
     endif
  if ( $BC == m3conc ) then 
-    set DATE = $JDATE 
+    set DATE = $CUR_JDATE 
     setenv BNDY_CONC_1    "$OUTDIR/BCON_${APPL}_${GRID_NAME}_${DATE} -v"
     rm -fv $BNDY_CONC_1
     endif
@@ -150,20 +150,20 @@ set BC = m3conc       # use CMAQ CTM concentration files (nested runs)
  
  if ( $BC == m3conc ) then 
 
-    #setenv CTM_CONC_1 $M3CONCIN/CCTM_v47_ebi_cb05cl_ae5_aq_mpi_pg64_mpich2.CONC.$JDATE
-    setenv CTM_CONC_1 $M3CONCIN/CCTM_V5g_ebi_cb05cl_ae5_aq_mpich2.CONC.$JDATE
+    #setenv CTM_CONC_1 $M3CONCIN/CCTM_v47_ebi_cb05cl_ae5_aq_mpi_pg64_mpich2.CONC.$CUR_JDATE
+    setenv CTM_CONC_1 $M3CONCIN/CCTM_V5g_ebi_cb05cl_ae5_aq_mpich2.CONC.$CUR_JDATE
     setenv BCON_PING NO
 
     setenv CTM_PING_1
     setenv PING_PDM_1
 
     setenv MET_CRO_3D_CRS $METIN_COARSE/METCRO3D.${G_DOMAINS_RES[$GRID_COARSE]}km.$G_DAY 
-    setenv MET_CRO_3D_FIN $METIN/METCRO3D.${G_DOMAINS_RES[$GRID]}km.$G_DAY 
+    setenv MET_CRO_3D_FIN $METIN/METCRO3D.${G_DOMAINS_RES[$DOMAINS_GRID]}km.$G_DAY 
 
     setenv MECH_CONV_FILE
 
     setenv SDATE           ${DATE}
-    setenv STIME   ${HH}0000 
+    setenv STIME   ${INIT_H}0000 
     setenv RUNLEN  
 
     endif
@@ -172,5 +172,5 @@ set BC = m3conc       # use CMAQ CTM concentration files (nested runs)
  /usr/bin/time $BASE/$EXEC
 
 # exit() 
-#@ JDATE ++
+#@ CUR_JDATE ++
 #end

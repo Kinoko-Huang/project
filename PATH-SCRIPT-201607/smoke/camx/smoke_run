@@ -1,0 +1,79 @@
+#!/bin/sh 
+
+MYDIR=`/usr/bin/dirname $0`
+cd $MYDIR || exit 1
+MYDIR=`/bin/pwd`
+MYNAME=`/bin/basename $0`
+
+ECHO="echo LOG:${MYNAME}:"
+
+if [ $# -eq 2 ]; then
+  # Met initial time
+  INIT_TIME=$1
+  # Met input data type, mm5 or wrf
+  MetDataType=$2
+else
+  $ECHO "Usage: $0 Init_time mm5/wrf"
+  $ECHO " e.g.: $0 2007010200 mm5"
+  exit 1
+fi
+
+if [ ${#INIT_TIME} -ne 10 ]; then
+  $ECHO "Invalid initial time $INIT_TIME, must be in YYYYMMDDhh"
+  exit 1
+fi
+
+DT=`/bin/date -d "${INIT_TIME:0:8} ${INIT_TIME:8:2}:00:00" +%Y%m%d%H 2>/dev/null`
+if [ "$DT" != "$INIT_TIME" ]; then
+  $ECHO "Invalid initial time $INIT_TIME"
+  exit 1
+fi
+
+INIT_H=${INIT_TIME:8:2}
+if [ "$INIT_H" != "00" -a "$INIT_H" != "12" ]; then
+  $ECHO "Invalid hour $INIT_H in initial time, must be 00 or 12"
+  exit 1
+fi
+
+if [ "$MetDataType" = "mm5" ]; then
+  $ECHO MetDataType=mm5
+elif [ "$MetDataType" = "wrf" ]; then
+  $ECHO MetDataType=wrf
+else
+  $ECHO "Invalid MetDataType=$MetDataType"
+  exit 1
+fi
+
+# Some programs still rely on 32-bit libpgc.so library
+export LD_LIBRARY_PATH=$PATH_PGI32/lib
+$ECHO "LD_LIBRARY_PATH=$LD_LIBRARY_PATH"
+
+$ECHO "Initial time: ${INIT_TIME}, Met data type: ${MetDataType}, Current directory: ${MYDIR}"
+
+if [ $SMOKE4CMAQ -eq 1 ]; then
+  cd $MYDIR/cmaq || {
+    $ECHO "Failed to chdir to $MYDIR/cmaq"
+    exit 1
+  }
+
+  $ECHO Run ./smoke_cmaq_run $INIT_TIME 
+  ./smoke_cmaq_run $INIT_TIME  || {
+    $ECHO "Failed to run ./smoke_cmaq_run $INIT_TIME"
+    exit 1
+  }
+fi
+
+if [ $SMOKE4CAMX -eq 1 ]; then
+  cd $MYDIR/camx/Combine || {
+    $ECHO "Failed to chdir to $MYDIR/camx"
+    exit 1
+  }
+
+  $ECHO Run ./smoke_camx_run $INIT_TIME
+  ./smoke_camx_run $INIT_TIME || {
+    $ECHO "Failed to run ./smoke_camx_run $INIT_TIME"
+    exit 1
+  }
+fi
+
+exit 0

@@ -1,0 +1,26 @@
+#!/bin/csh -f
+
+set CUR_JDATE = $argv[1]
+set DOMAINS_RES   = $argv[2]
+
+set INBIO = $MGNOUT/$PROJ/$DOMAINS_RES
+set OUTBIO = $INBIO 
+mkdir -p $OUTBIO
+
+set OUTFILE = $OUTBIO/emiss_MEGAN_CB05X.HongKong.${DOMAINS_RES}km_${CUR_JDATE}.camx
+rm -f $OUTFILE
+
+set INPFILE1 = $INBIO/emiss_MEGAN_CB05.HongKong.${DOMAINS_RES}km_${CUR_JDATE}.camx
+set INPFILE2 = $INBIO/emiss_MEGAN_SOAX.HongKong.${DOMAINS_RES}km_${CUR_JDATE}.camx
+#
+../bin/mrgem << EOF
+Input 1            |$INPFILE1
+Input 2            |$INPFILE2
+Output             |$OUTFILE
+EOF
+
+gzip -f $INPFILE1
+gzip -f $INPFILE2
+#gzip $OUTFILE
+
+

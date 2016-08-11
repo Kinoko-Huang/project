@@ -26,7 +26,6 @@ if [ ! -d $OutputDir ]; then
   }
 fi
 
-#for DOMAINS_RES in 27 9 3 1
 for DOMAINS_RES in ${G_DOMAINS_RES_gov}
 do
   [ -f outputs/$DOMAINS_RES/GRIDDESC ] || {
@@ -35,7 +34,6 @@ do
   }
 done
 
-#for DOMAINS_RES in 27 9 3 1 
 for DOMAINS_RES in ${G_DOMAINS_RES_gov}
 do
   if [ ! -d $OutputDir/${DOMAINS_RES}km ]; then

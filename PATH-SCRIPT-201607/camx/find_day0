@@ -38,7 +38,7 @@ do
   DOMAINS_GRID=1
   for DOMAINS_RES in $G_DOMAINS_RES_gov
   do
-    files=/usr/bin/find $OutputDir/HKPATH.$DOMAINS_GRID
+    files=`/usr/bin/find $OutputDir/HKPATH.${DOMAINS_RES} -mindepth 1 -maxdepth 1 -type f -name "CAMx5.4.HKPATH.${DOMAINS_RES}.${INIT_TIME:0:8}.*" -print`
     if [ -z "$files" ]; then
       echo "No valil CAMx5.4.HKPATH...${Output_init_time:0:8}... found in $OutputDir"
       continue

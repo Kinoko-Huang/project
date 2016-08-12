@@ -1,8 +1,5 @@
 #!/bin/sh
 
-#CTM_SIM_N_DAYS=3
-#CTM_SKIP_N_DAYS=1
-
 MYROOT=`/usr/bin/dirname $0`
 MYNAME=`/bin/basename $0`
 

@@ -27,9 +27,13 @@
  setenv ae_matrix_nml ${BLD}/AE_$MECH.nml
  setenv nr_matrix_nml ${BLD}/NR_$MECH.nml
  setenv tr_matrix_nml ${BLD}/Species_Table_TR_0.nml
- # Ying LI: add the species defination are required for the CMAQv5.0.1
+ setenv CSQY_DATA ${BLD}/CSQY_DATA_$MECH
+ if (! (-e $CSQY_DATA ) ) then
+   echo " $CSQY_DATA  not found "
+   exit 1
+ endif
+# Ying LI: add the species defination are required for the CMAQv5.0.1
 
-#set BASE     = /tmp/you/your_directory
  set BASE     = $cwd
 
  echo "Warning: $BASE/cfg.${CFG} does not exist"

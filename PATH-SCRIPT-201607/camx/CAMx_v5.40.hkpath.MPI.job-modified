@@ -74,8 +74,13 @@ if ($DOMAINS_GRID == 1) then
        set IC = " "
     endif
   else
-    set RESTART = "true"
-    set IC = " "
+    if  ($CUR_GDATE == $BEG_GDATE) then
+      set RESTART = "false"
+      set IC = "$ICBC/icon.camx.${DOMAINS_RES}km.$BEG_JDATE.bin"
+    else
+      set RESTART = "true"
+      set IC = " "
+    endif
   endif
 else
   if ($CTM_COLD_START == 0) then
@@ -87,8 +92,13 @@ else
       set IC = " " 
     endif
   else
-    set RESTART = "true"
-    set IC = " "
+    if ($CUR_GDATE == $BEG_GDATE) then
+      set RESTART = "false"
+      set IC = "$ICBC/icon.camx.${DOMAINS_RES}km.$CUR_JDATE.bin"
+    else
+      set RESTART = "true"
+      set IC = " "
+    endif
   endif
 endif 
 

@@ -370,8 +370,8 @@ while ( "$CUR_JDATE" <= "$END_JDATE" )
   set DOMAINS_GRID = 1
   foreach DOMAINS_RES ( $G_DOMAINS_RES )  
     setenv MIDNAME hk${DOMAINS_RES}
+    
     echo NOW IS RUNNING BCON ON ${DOMAINS_RES}km at $CUR_JDATE ...
-
     # run bcon
     if ( "$DOMAINS_GRID" != "1" ) then
       cd $OPDIR/preproc/bcon
@@ -406,30 +406,12 @@ while ( "$CUR_JDATE" <= "$END_JDATE" )
       setenv NEW_START false  
     endif
     echo "CMAQ cold start domain = ${DOMAINS_RES}km and date = $CUR_JDATE"
-    echo Run ./run.OP.mpich2_cold $CUR_JDATE $ICON_path $ICON_file
-    ./run.OP.mpich2-test $CUR_JDATE $ICON_path $ICON_file $DOMAINS_GRID
+    echo Run ./run.OP.mpich2 $CUR_JDATE $ICON_path $ICON_file
+    ./run.OP.mpich2 $CUR_JDATE $ICON_path $ICON_file $DOMAINS_GRID
     if ( $status != 0 ) then
-      echo Failed: ./run.OP.mpich2_cold $CUR_JDATE $ICON_path $ICON_file
+      echo Failed: ./run.OP.mpich2 $CUR_JDATE $ICON_path $ICON_file
       exit 1
     endif
-#      if (! -f $M3OUT/${EXEC}_${M3EXTN}.CONC.$YES_JDATE && $CTM_COLD_START == 0 ) then
-#        setenv NEW_START  true
-#        echo "CMAQ cold start domain = ${DOMAINS_RES}km and date = $BEG_JDATE"
-#        echo Run ./run.OP.mpich2_cold $CUR_JDATE $ICON_path $ICON_file
-#        ./run.OP.mpich2_cold $CUR_JDATE $ICON_path $ICON_file $DOMAINS_GRID
-#        if ( $status != 0 ) then
-#          echo Failed: ./run.OP.mpich2_cold $CUR_JDATE $ICON_path $ICON_file
-#          exit 1
-#        endif
-#      else  
-#        stenv NEW_START  false
-#        echo Run ./run.OP.mpich2 $CUR_JDATE
-#        ./run.OP.mpich2 $CUR_JDATE $DOMAINS_GRID
-#        if ( $status != 0 ) then
-#          echo Failed: ./run.OP.mpich2 $CUR_JDATE
-#          exit 1
-#        endif
-#      endif
     @ DOMAINS_GRID ++
     end  # foreach DOMAINS_RES
     #@ CUR_JDATE++

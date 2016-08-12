@@ -172,5 +172,3 @@ set BC = m3conc       # use CMAQ CTM concentration files (nested runs)
  /usr/bin/time $BASE/$EXEC
 
 # exit() 
-#@ CUR_JDATE ++
-#end

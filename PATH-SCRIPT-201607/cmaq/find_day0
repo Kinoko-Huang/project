@@ -20,7 +20,7 @@ Prefix=CCTM_V5g_ebi_cb05cl_ae5_aq_mpich2
 
 INIT_JDATE=`${PATH_SYSDIR}/bin/ymd2yj ${INIT_TIME:0:8}`
 if [ $FC_MODE -eq 1 ]; then
-  INIT_YES_JDATE=`${PATH_SYSDIR}/bin/yj_prev $INIT_JDATE`
+  INIT_JDATE=`${PATH_SYSDIR}/bin/yj_prev $INIT_JDATE`
 fi
 for Output_init_time in $Output1_init_time $Output2_init_time $Output3_init_time
 do
@@ -29,8 +29,8 @@ do
     echo "Output directory ${OutputDir} does not exist"
     continue
   fi
-for DOMAINS_RES in G_DOMAINS_RES_gov
-  files=$OutputDir/${DOMAINS_RES}km   
+for DOMAINS_RES in $G_DOMAINS_RES_gov
+  files=`/usr/bin/find $OutputDir/${DOMAINS_RES}km -mindepth 1 -maxdepth 1 -type f -name   "${Prefix}.*.${INIT_JDATE}" -print`   
   if [ -z $files ]; then
     echo "No valid CCTM_V5g_ebi_cb05cl_ae5_aq_mpi_pg64_mpich2....${INIT_YES_JDATE} found in $OutputDir"
     continue

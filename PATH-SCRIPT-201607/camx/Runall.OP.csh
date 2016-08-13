@@ -55,7 +55,6 @@ echo $BEG_JDATE $END_JDATE
   endif
 #
 ##### Step 3 Prepare tuv file for CAMx ############
-
   cd $TUV
   foreach DOMAINS_RES ($G_DOMAINS_RES)
     csh -f tuv4.0_1.hkpath.job   $BEG_JDATE $END_JDATE $DOMAINS_RES

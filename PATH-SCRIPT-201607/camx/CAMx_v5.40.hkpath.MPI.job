@@ -7,7 +7,7 @@ source ../../domains_def.config
 set EXEC      = $CAMxExec
 
 set BEG_JDATE = $argv[2]
-set CUR_JDATE = $argv[1] #first day of simulation
+set CUR_JDATE = $argv[1] 
 set DOMAINS_GRID = $argv[3]
 set DOMAINS_RES = $argv[4]
 set DOMAINS_RES_D = `printf "%02d" $DOMAINS_RES`

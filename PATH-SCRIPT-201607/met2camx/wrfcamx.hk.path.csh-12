@@ -95,10 +95,7 @@ WRF filename       |wrfout_d0${DOMAINS_GRID}_${TOM_Y}-${TOM_M}-${TOM_D}_11:00:00
 WRF filename       |wrfout_d0${DOMAINS_GRID}_${TOM_Y}-${TOM_M}-${TOM_D}_12:00:00
 EOF
 
-
-#@ CUR_JDATE ++
 set CUR_JDATE = `./yyyyjjj_plus_dd $CUR_JDATE 1`
-
 
 ########End the Loop of time   ################
 end

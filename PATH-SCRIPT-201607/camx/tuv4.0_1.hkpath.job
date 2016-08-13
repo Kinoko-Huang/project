@@ -142,4 +142,4 @@ EOF
 rm ./tuv.inp
 set CUR_JDATE = `$CAMx_HOME/datelib/yyyyjjj_plus_dd $CUR_JDATE 1`
 
-end #end of while
+end #while

@@ -60,8 +60,8 @@ do
       exit 1
     }
     DOMAINS_GRID=$[DOMAINS_GRID+1]
-  done #done of DOMAINS_GRID
+  done #DOMAINS_GRID
   exit 0
-done #done of Output_init_time
+done #Output_init_time
 echo "No valid output found for day0 = $INIT_TIME"
 exit 2

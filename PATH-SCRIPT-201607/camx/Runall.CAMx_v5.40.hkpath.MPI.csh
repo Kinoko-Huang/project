@@ -34,8 +34,8 @@ while ( $CUR_JDATE <= $END_JDATE )
     endif
   
     @ DOMAINS_GRID ++
-  end #end of foreach
+  end #foreach
 set CUR_JDATE = `$CAMx_HOME/datelib/yyyyjjj_plus_dd $CUR_JDATE 1`
 
-end #end of while
+end #while
 

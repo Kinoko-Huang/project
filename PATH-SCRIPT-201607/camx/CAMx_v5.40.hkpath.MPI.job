@@ -64,33 +64,28 @@ set YES_GDATE = ${YES_Y}${YES_M}${YES_D}
 set CUR_GDATE     = `echo $CUR_GDATE     | awk '{printf("%6.6d",$1)}'`
 set YES_GDATE = `echo $YES_GDATE | awk '{printf("%6.6d",$1)}'`
 
-if ($DOMAINS_GRID == 1) then
-  if ($CTM_COLD_START == 0) then
+if ($CTM_COLD_START == 0) then
+  if ($DOMAINS_GRID == 1) then
     if ( ! -f $ICstart/CAMx5.4.${RUN}.${YES_BEG_GDATE}.inst ) then
-       set RESTART = "false"
-       set IC = "$ICBC/icon.camx.${DOMAINS_RES}km.$BEG_JDATE.bin"
+      set RESTART = "false"
+      set IC = "$ICBC/icon.camx.${DOMAINS_RES}km.$BEG_JDATE.bin"
     else
-       set RESTART = "true"
-       set IC = " "
+      set RESTART = "true"
+      set IC = " "
     endif
   else
-    set RESTART = "true"
-    set IC = " "
-  endif
-else
-  if ($CTM_COLD_START == 0) then
     if ( ! -f $ICstart/CAMx5.4.${RUN}.${YES_GDATE}.inst ) then
       set RESTART = "false"
       set IC = "$ICBC/icon.camx.${DOMAINS_RES}km.$CUR_JDATE.bin"
     else
       set RESTART = "true"
-      set IC = " " 
+      set IC = " "
     endif
-  else
-    set RESTART = "true"
-    set IC = " "
   endif
-endif 
+else
+  set RESTART = "true"
+  set IC = " "
+endif
 
 echo CTM_COLD_START=$CTM_COLD_START
 echo RESTART=$RESTART

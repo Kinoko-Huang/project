@@ -399,7 +399,6 @@ while ( "$CUR_JDATE" <= "$END_JDATE" )
     cd $OPDIR
     # run cmaq
     cd $OPDIR/runfiles/runfiles
-    set M3OUT = $MY_OUTPUT/$M3CASE/${DOMAINS_RES}km
     if ( $CTM_COLD_START == 1 && "$CUR_JDATE" == "$BEG_JDATE" ) then
       setenv NEW_START true
     else
@@ -414,9 +413,8 @@ while ( "$CUR_JDATE" <= "$END_JDATE" )
     endif
     @ DOMAINS_GRID ++
     end  # foreach DOMAINS_RES
-    #@ CUR_JDATE++
     set CUR_JDATE = `$PATH_SYSDIR/bin/yj_next $CUR_JDATE 1`
-  end #end of while 
+  end #while 
   
 ########AT THE VERY END############################
 cd $OPDIR

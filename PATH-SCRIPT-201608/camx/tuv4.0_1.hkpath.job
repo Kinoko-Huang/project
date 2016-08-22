@@ -1,0 +1,145 @@
+#!/bin/csh -f 
+#
+# Script to run TUV version 4.0_1 for CAMx to prepare a photolysis rate input
+# file for CAMx.  
+#
+# This version picks the CAMx values for albedo, haze and ozone column
+# directly from the header of a CAMx AHOMAP input file
+#
+# The changes to the TUV source code for the CAMx implementation are 
+# listed in the file "README.camx"
+#
+# ===========
+# Compilation
+# ===========
+#
+# ENVIRON has tested TUV for CAMx on DEC Alpha, Sun, SGI and Linux platforms.
+# Differences in results tend to be larger and more frequent using the
+# discrete ordinates method than the 2-stream method.  However, in all cases
+# results agreed within 0.1% which is considered an acceptable level of 
+# uncertainty.
+#
+# A simple utility for comparing 2 output files is included called tuvcmpr.
+#
+# For guidance on compiling TUV for your computer see the notes in the Makefile.
+#
+# ==============
+# User Interface
+# ==============
+#
+# The CAMx photolysis rate file is a lookup table of photolysis rates.
+# The file is arranged in multiple panels of data.  Each panel
+# contains data as a function of:
+#   - solar zenith angle
+#   - potolysis reaction
+#   - altitude above the surface
+#
+# Multiple panels are included to account for dependencies on:
+#   - ozone column 
+#   - UV albedo
+#   - Haze (optical depth due to absorption plus scattering at 340 nm)
+#
+# The number of ozone column, UV albedo and Haze values must be
+# consistent with the CAMx model configuration.  The typical
+# configuration is 5 ozone columns, 5 UV albedos and 3 hazes -
+# this is determined by parameter statements in CAMx located
+# in the include file "camx.prm".  
+#
+# The values for ozone column, UV albedo and Haze are read directly from
+# a CAMx "AHOMAP" input file.  Therefore, the AHOMAP file must be prepared
+# prior to running TUV.
+#
+# The number of vertical levels and their values must be specified in
+# km above the surface.  The number of levels must be consistent 
+# with the number of levels that CAMx expects to read from this file (this
+# does not mean that the CAMx domain layer structure must match TUV).  
+# The default value of 11 TUV levels is set in the CAMx include file "camx.prm".
+#
+# A date is provided to TUV to estimate the sun-earth distance
+# which varies through the year.  It would be OK to use the same
+# date for all the days through a (say) ten day episode.
+#
+# Two radiative transfer schemes can be used.  The selection is
+# made by number:
+#   1 - pseudo-spherical two-stream delta-Eddington (ps2str.f)
+#   2 - discrete ordinates method (psndo.f)
+# Further details are given in the TUV code.  They are both sound
+# computational methods.  1 is faster, 2 is considered more accurate.
+#
+# The number of photolysis reactions to include in each panel of
+# data is an input.  This depends upon the chemical mechanism
+# selected and the way the chemistry parameters file is set up.
+# The chemistry parameters file allows CAMx to read photolysis
+# rates for a reaction directly from the lookup table,
+# or alternatively to calculate photolysis rates using a ratio
+# to another reaction.  Thus, the lookup tables must have at 
+# least one reaction, may have all the photolysis reactions (N)
+# or may have any number of reactions between 1 and N.  This 
+# provides a lot of flexibilty, which most users will not want to
+# deal with.  Here are the configurations which match the 
+# chemistry parameters files supplied with CAMx.
+#
+# CB4 with updated isoprene chemistry (CAMx mechanisms 1, 3 and 4)
+# # of phot reactions| 6
+# TUV reaction #s    | 4, 15, 16, 2, 17, 56
+#
+# SAPRC99 mechanism (CAMx mechanism 5)
+# # of phot reactions| 6
+# TUV reaction #s    | 100 91 90 103 85 105
+#
+# CB05 mechanism (CAMx mechanism 6)
+# # of phot reactions| 19
+# TUV reaction #s    | 100, 122, 121, 102, 101, 125, 89, 126, 127, 128, 129, 86, 91, 90, 85, 130, 84, 131, 70
+#
+# The reaction numbers used here refer to the numbering of the 
+# database inside TUV.  The contents of this database
+# are listed in the TUV output file, called tuv.out.
+#
+# =======
+# Run TUV
+# =======
+#
+# Here are examples for CB4, SAPRC99, and CB05.
+#
+# The examples use the quick (ps2str) radiative transfer scheme (1) but
+# the slow (do) scheme (2) is recommended.
+#
+#------------------------------------------------------------------------------
+
+# Prepare the input file (always called tuv.inp)
+#
+source ../../../domains_def.config
+
+set BEG_JDATE = $argv[1]
+set END_JDATE = $argv[2]
+set CUR_JDATE = $BEG_JDATE
+set DOMAINS_RES = $argv[3]
+
+rm -f msg/log.tuv.*.$DOMAINS_RES
+
+while ( $CUR_JDATE <= $END_JDATE )
+set CUR_Y = `$CAMx_HOME/datelib/j2g $CUR_JDATE | awk '{print $1}'`
+set CUR_M   = `$CAMx_HOME/datelib/j2g $CUR_JDATE | awk '{print $2}'`
+set CUR_D   = `$CAMx_HOME/datelib/j2g $CUR_JDATE | awk '{print $3}'`
+set CUR_YY   = `echo $CUR_Y | cut -c 3-4`
+set CUR_GDATE = $CUR_Y$CUR_M$CUR_D
+set CUR_GDATE_YY = $CUR_YY$CUR_M$CUR_D
+
+cat << EOF >& ./tuv.inp
+output file name   |$CAMx_HOME/inputs/tuv/tuv_hk.$CUR_GDATE.${DOMAINS_RES}km_CB05
+ahomap file name   |$CAMx_HOME/inputs/ahomap/ahomap.hk.$CUR_GDATE.${DOMAINS_RES}km
+ozone, albedo, haze| 5, 5, 3
+# of vert levels   | 11
+levels, km agl     | 0. 0.15 0.35 0.60 1.00 2.00 3.00 4.00 6.00 8.00 10.0
+date (YYMMDD)      | $CUR_GDATE_YY
+rad transfer scheme| 1
+# of phot reactions| 19
+TUV reaction #s    | 100, 122, 121, 102, 101, 125, 89, 126, 127, 128, 129, 86, 91, 90, 85, 130, 84, 131, 70
+EOF
+
+./src/tuv.lnx >& msg/log.tuv.$CUR_GDATE.${DOMAINS_RES}
+
+rm ./tuv.inp
+set CUR_JDATE = `$CAMx_HOME/datelib/yyyyjjj_plus_dd $CUR_JDATE 1`
+
+end #while

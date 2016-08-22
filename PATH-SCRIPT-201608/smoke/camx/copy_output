@@ -1,0 +1,104 @@
+#!/bin/sh
+
+MYROOT=`/usr/bin/dirname $0`
+MYNAME=`/bin/basename $0`
+
+cd $MYROOT || exit 1
+MYDIR=`/bin/pwd`
+
+if [ $# -eq 1 ]; then
+  INIT_TIME=$1
+else 
+  echo "Usage: $0 YYYYMMDDhh"
+  exit 1
+fi
+
+DT=`/bin/date -d "${INIT_TIME:0:8} ${INIT_TIME:8:2}:00:00" +%Y%m%d%H 2>/dev/null`
+if [ "$INIT_TIME" != "$DT" ]; then
+  echo "Invalid initial time ${INIT_TIME}"
+  echo "Usage: $0 YYYYMMDDhh"
+  exit 1
+fi
+
+BEG_GDATE=`/bin/date -d "${INIT_TIME:0:8} ${INIT_TIME:8:2}:00:00 $CTM_SKIP_N_DAYS day" +%Y%m%d`
+let "n_days = $CTM_SIM_N_DAYS - 1"
+END_GDATE=`/bin/date -d "${BEG_GDATE} $n_days days" +%Y%m%d`
+
+SMOKE_CAMX_OUTPUT=$DATA_SMOKE_OUTPUT/${INIT_TIME:0:4}/${INIT_TIME:0:6}/${INIT_TIME}/camx
+if [ $CTM_CLEAN_OUTPUT -eq 1 ]; then
+  if [ -e $SMOKE_CAMX_OUTPUT ]; then
+    echo "Output directory ${SMOKE_CAMX_OUTPUT} exists, remove it"
+    /bin/rm -r -f $SMOKE_CAMX_OUTPUT
+  fi
+  /bin/mkdir -p $SMOKE_CAMX_OUTPUT || {
+    echo "Failed to create output direcotry ${SMOKE_CAMX_OUTPUT}"
+    exit 1
+  }
+else
+  if [ ! -e $SMOKE_CAMX_OUTPUT ]; then
+    echo "Output directory ${SMOKE_CAMX_OUTPUT} does not exist while CTM_SKIP_N_DAYS = $CTM_SKIP_N_DAYS"
+    exit 1
+  fi
+fi
+
+echo SMOKE_CAMX_OUTPUT=$SMOKE_CAMX_OUTPUT
+
+PointSrcDir=$SMKTempDir/emiss/merged
+AreaSrcDir=$SMKTempDir/CAMxin/Emis/anth
+
+cd $PointSrcDir || {
+  echo "Failed to change directory to $PointSrcDir"
+  exit 1
+}
+
+for DOMAINS_RES in $G_DOMAINS_RES_gov
+do
+  toDir=$SMOKE_CAMX_OUTPUT/${DOMAINS_RES}km/ptsrc
+  /bin/mkdir -p -v $toDir
+  CUR_GDATE=$BEG_GDATE
+  while [ $CUR_GDATE -le $END_GDATE ]
+  do
+    CUR_JDATE=`$PATH_SYSDIR/bin/ymd2yj $CUR_GDATE`
+    if [ $? -ne 0 ]; then
+      echo "Failed to run $PATH_SYSDIR/bin/ymd2yj $CUR_GDATE"
+      exit 1
+    fi
+    frFile=${DOMAINS_RES}/ptsrc/camx.hk.cb05.${DOMAINS_RES}km.ptsrc.${CUR_JDATE}.bin
+    /bin/cp -v $frFile $toDir/ || {
+      echo "Failed to /bin/cp -v $frFile $toDir/"
+      exit 1
+    }
+    CUR_GDATE=`/bin/date -d "$CUR_GDATE 1 day" +%Y%m%d`
+  done
+done
+
+cd $AreaSrcDir || {
+  echo "Failed to change directory to $AreaSrcDir"
+  exit 1
+}
+
+DOMAINS_GRID=1
+for DOMAINS_RES in $G_DOMAINS_RES_gov
+do
+  toDir=$SMOKE_CAMX_OUTPUT/${DOMAINS_RES}km/area
+  /bin/mkdir -p -v $toDir
+  CUR_GDATE=$BEG_GDATE
+  while [ $CUR_GDATE -le $END_GDATE ]
+  do
+    CUR_JDATE=`$PATH_SYSDIR/bin/ymd2yj $CUR_GDATE`
+    if [ $? -ne 0 ]; then
+      echo "Failed to run $PATH_SYSDIR/bin/ymd2yj $CUR_GDATE"
+      exit 1
+    fi
+    DOMAINS_RES_D=`printf "%02d" $DOMAINS_RES`
+    frFile=D${DOMAINS_GRID}/area/emiss.camx.cb05.an.HK${DOMAINS_RES_D}_${CUR_JDATE}.uam
+    /bin/cp -v $frFile $toDir/ || {
+      echo "Failed to /bin/cp -v $frFile $toDir/"
+      exit 1
+    }
+    CUR_GDATE=`/bin/date -d "$CUR_GDATE 1 day" +%Y%m%d`
+  done
+  DOMAINS_GRID=$[DOMAINS_GRID+1]
+done
+
+exit 0

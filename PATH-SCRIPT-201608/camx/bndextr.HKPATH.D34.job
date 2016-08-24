@@ -50,7 +50,7 @@ set iwest = ${IWEST_AQMS_Dx[$DOMAINS_GRID]}
 set ieast = ${IEAST_AQMS_Dx[$DOMAINS_GRID]}
 set jsouth = ${JSOUTH_AQMS_Dx[$DOMAINS_GRID]}
 set jnorth = ${JNORTH_AQMS_Dx[$DOMAINS_GRID]}
-set RUN = HKPATH.${G_DOMAINS_RES_AQMS[$GRID_COARSE]}
+set RUN = HKPATH.${G_DOMAINS_RES_CAMX[$GRID_COARSE]}
 ln -fs $CAMxOUT/$RUN/CAMx5.4.$RUN.$CUR_GDATE.avrg.grd01 CAMx5.4.$RUN.$CUR_GDATE.avrg
 
 ./bndextr.linux << EOF >& ./msg/log.bndexr.${DOMAINS_RES}.$CUR_JDATE

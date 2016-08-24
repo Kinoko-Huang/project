@@ -15,7 +15,7 @@ setenv CAMxExec $PATH_ROOTDIR/camx/src.v5.40/CAMx.v5.40.MPI.pg_linux
 while ( $CUR_JDATE <= $END_JDATE ) 
 
   set DOMAINS_GRID = 1
-  foreach DOMAINS_RES ($G_DOMAINS_RES_AQMS)
+  foreach DOMAINS_RES ($G_DOMAINS_RES_CAMX)
   
     if ( $DOMAINS_GRID != 1  ) then
       cd $BNDEXTR

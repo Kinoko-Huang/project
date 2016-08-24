@@ -40,7 +40,7 @@ echo "******************************************************"
 #---------------------step 1 --------------------------
 
 set DOMAINS_GRID = 1
-foreach DOMAINS_RES ($G_DOMAINS_RES)
+foreach DOMAINS_RES ($G_DOMAINS_RES_SMOKE)
   echo "----------------------------------------"
   echo " now processing :D$DOMAINS_GRID                "           
   echo "----------------------------------------"

@@ -13,7 +13,7 @@ source ../../../../domains_def.config
 set BEG_JDATE = $argv[1]
 set END_JDATE = $argv[2]
 set CUR_JDATE = $BEG_JDATE
-set DOMAINS_RES = ${G_DOMAINS_RES_AQMS[1]}
+set DOMAINS_RES = ${G_DOMAINS_RES_CAMX[1]}
 
 rm -f ../msg/log.bc.spcmap.*.${DOMAINS_RES}km
 rm -f ../msg/log.bc.cmaq2uam.*.${DOMAINS_RES}km

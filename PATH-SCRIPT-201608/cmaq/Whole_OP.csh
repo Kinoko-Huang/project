@@ -72,7 +72,7 @@ if ( "$LINKMCIP" == 1 ) then
   #setenv MCIPDIR ~pathop/data/mcip
   echo LINK MCIP to INPUT
   echo MCIP directory $MCIPDIR/$INIT_Y/$INIT_Y$INIT_M/${INIT_TIME}
-  foreach DOMAINS_RES ( $G_DOMAINS_RES )
+  foreach DOMAINS_RES ( $G_DOMAINS_RES_CMAQ )
     /bin/ln -sf $MCIPDIR/$INIT_Y/$INIT_Y$INIT_M/$INIT_TIME/${DOMAINS_RES}km/GRID* $INDIR/met/${DOMAINS_RES}km/
     if ( $status != 0 ) then
       echo "Failed: /bin/ln -sf $MCIPDIR/$INIT_Y/$INIT_Y$INIT_M/${INIT_TIME}/${DOMAINS_RES}km/GRID* $INDIR/met/${DOMAINS_RES}km/"
@@ -139,7 +139,7 @@ if ( "$PICKEMIS" == 1 ) then
   while ("$CUR_JDATE" <= "$END_JDATE" )
     setenv CUR_GDATE `$UTILDIR/datelib/yyyyjjj2yyyymmdd $CUR_JDATE`
     setenv IDOW `$UTILDIR/datelib/yyyymmdd2dow $CUR_GDATE`
-    foreach DOMAINS_RES ( $G_DOMAINS_RES )
+    foreach DOMAINS_RES ( $G_DOMAINS_RES_CMAQ )
       switch ( $IDOW )
       case Sat:
         setenv INFILE ${EGEN_DIR}/${DOMAINS_RES}km/merged/emiss_CB05.HongKong.${DOMAINS_RES}km_Sat${hour12z}.ncf
@@ -194,32 +194,32 @@ if ( "$PICKICBC" == 1 ) then
     setenv ICBCDIR $OPDIR/preproc/$WCHICBC/200601
     setenv SEAS Winter
     #gunzip $ICBCDIR/ICON_COMBINE_2006002.gz
-    cp $ICBCDIR/ICON_COMBINE_2006002 $INDIR/icbc/${G_DOMAINS_RES[1]}km/
-    setenv ICON_path $INDIR/icbc/${G_DOMAINS_RES[1]}km
+    cp $ICBCDIR/ICON_COMBINE_2006002 $INDIR/icbc/${G_DOMAINS_RES_CMAQ[1]}km/
+    setenv ICON_path $INDIR/icbc/${G_DOMAINS_RES_CMAQ[1]}km
     setenv ICON_file ICON_COMBINE_2006002
     #gzip $ICBCDIR/ICON_COMBINE_2006002
   else if ( "$INIT_M" == "03" | "$INIT_M" == "04" | "$INIT_M" == "05" ) then
     setenv ICBCDIR $OPDIR/preproc/$WCHICBC/200604
     setenv SEAS Spring
     #gunzip $ICBCDIR/ICON_COMBINE_2006091.gz
-    cp $ICBCDIR/ICON_COMBINE_2006091 $INDIR/icbc/${G_DOMAINS_RES[1]}km/
-    setenv ICON_path $INDIR/icbc/${G_DOMAINS_RES[1]}km
+    cp $ICBCDIR/ICON_COMBINE_2006091 $INDIR/icbc/${G_DOMAINS_RES_CMAQ[1]}km/
+    setenv ICON_path $INDIR/icbc/${G_DOMAINS_RES_CMAQ[1]}km
     setenv ICON_file ICON_COMBINE_2006091
     #gzip $ICBCDIR/ICON_COMBINE_2006091
   else if ( "$INIT_M" == "06" | "$INIT_M" == "07" | "$INIT_M" == "08" ) then
     setenv ICBCDIR $OPDIR/preproc/$WCHICBC/200607
     setenv SEAS Summer
     #gunzip $ICBCDIR/ICON_COMBINE_2006182.gz
-    cp $ICBCDIR/ICON_COMBINE_2006182 $INDIR/icbc/${G_DOMAINS_RES[1]}km/
-    setenv ICON_path $INDIR/icbc/${G_DOMAINS_RES[1]}km
+    cp $ICBCDIR/ICON_COMBINE_2006182 $INDIR/icbc/${G_DOMAINS_RES_CMAQ[1]}km/
+    setenv ICON_path $INDIR/icbc/${G_DOMAINS_RES_CMAQ[1]}km
     setenv ICON_file ICON_COMBINE_2006182
     #gzip $ICBCDIR/ICON_COMBINE_2006182
   else if ( "$INIT_M" == "09" | "$INIT_M" == "10" | "$INIT_M" == "11" ) then
     setenv ICBCDIR $OPDIR/preproc/$WCHICBC/200610
     setenv SEAS Autumn
     #gunzip $ICBCDIR/ICON_COMBINE_2006274.gz
-    cp $ICBCDIR/ICON_COMBINE_2006274 $INDIR/icbc/${G_DOMAINS_RES[1]}km/
-    setenv ICON_path $INDIR/icbc/${G_DOMAINS_RES[1]}km
+    cp $ICBCDIR/ICON_COMBINE_2006274 $INDIR/icbc/${G_DOMAINS_RES_CMAQ[1]}km/
+    setenv ICON_path $INDIR/icbc/${G_DOMAINS_RES_CMAQ[1]}km
     setenv ICON_file ICON_COMBINE_2006274
     #gzip $ICBCDIR/ICON_COMBINE_2006274
   endif 
@@ -351,7 +351,7 @@ if ( "$PICKICBC" == 1 ) then
       unsetenv INFILE
       setenv INFILE $ICBCDIR/BCON_COMBINE_${DATEDOW}_12z
     endif
-    setenv OUTFILE $INDIR/icbc/${G_DOMAINS_RES[1]}km/BCON_COMBINE_$CUR_JDATE
+    setenv OUTFILE $INDIR/icbc/${G_DOMAINS_RES_CMAQ[1]}km/BCON_COMBINE_$CUR_JDATE
     cd $UTILDIR/m3tshift
     ./run.m3tshift.csh $CUR_JDATE $INFILE $OUTFILE
     cd $OPDIR
@@ -368,7 +368,7 @@ while ( "$CUR_JDATE" <= "$END_JDATE" )
   setenv CUR_GDATE `$UTILDIR/datelib/yyyyjjj2yyyymmdd $CUR_JDATE`
   set YES_JDATE = `$PATH_SYSDIR/bin/yj_prev $CUR_JDATE 1`
   set DOMAINS_GRID = 1
-  foreach DOMAINS_RES ( $G_DOMAINS_RES )  
+  foreach DOMAINS_RES ( $G_DOMAINS_RES_CMAQ )  
     setenv MIDNAME hk${DOMAINS_RES}
     
     echo NOW IS RUNNING BCON ON ${DOMAINS_RES}km at $CUR_JDATE ...

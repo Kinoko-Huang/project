@@ -143,7 +143,7 @@ endif
 #
 #-----------------------------------------------------------------------
 set DOMAINS_GRID = 1
-foreach DOMAINS_RES ( ${G_DOMAINS_RES_AQMS} )
+foreach DOMAINS_RES ( ${G_DOMAINS_RES_MCIP} )
 
   set GridName = HKPATH_${DOMAINS_RES}KM   
   set NCOLS = ${NCOLS_AQMS_Dx[$DOMAINS_GRID]} 

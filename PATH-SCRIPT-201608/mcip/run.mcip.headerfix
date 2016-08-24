@@ -5,7 +5,7 @@ source ../../domains_def.config
 set CASE_root = $argv[1]
 
 set DOMAINS_GRID = 1
-foreach DOMAINS_RES ( ${G_DOMAINS_RES_AQMS} )
+foreach DOMAINS_RES ( ${G_DOMAINS_RES_MCIP} )
 
 set XORIG_CRO = `expr ${XCRO_AQMS_Dx[$DOMAINS_GRID]} \* 1000`
 set YORIG_CRO = `expr ${YCRO_AQMS_Dx[$DOMAINS_GRID]} \* 1000`

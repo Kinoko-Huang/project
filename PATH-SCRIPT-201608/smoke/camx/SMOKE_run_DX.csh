@@ -34,7 +34,7 @@ ls $cwd/marine_2008_D3_LRV.txt >> area_marine_2008_D3_LRV.lst
 echo '#LIST' > area_marine_2008_D3_OGV.lst
 ls $cwd/marine_2008_D3_OGV.txt >> area_marine_2008_D3_OGV.lst
 
-if ($#G_DOMAINS_RES == 4) then
+if ($#G_DOMAINS_RES_SMOKE == 4) then
   echo '#LIST' > area_marine_2008_D4_LRV.lst
   ls $cwd/marine_2008_D4_LRV.txt >> area_marine_2008_D4_LRV.lst
 
@@ -55,7 +55,7 @@ ls $cwd/point_2005_hk.ida >> point_2005.lst
 ls $cwd/point_2004_SZ.ida >> point_2005.lst
 ls $cwd/ptinv.prd.lares.ida.20090706.txt.stkdiaheight_nonSZ >> point_2005.lst
 
-if ($#G_DOMAINS_RES == 4) then
+if ($#G_DOMAINS_RES_SMOKE == 4) then
   set DOMAINS_MAX = 4
 else 
   set DOMAINS_MAX = 3
@@ -183,7 +183,7 @@ while ($DOMAINS_RES <= $DOMAINS_MAX)
 
 end 
 
-if ($#G_DOMAINS_RES == 4) then
+if ($#G_DOMAINS_RES_SMOKE == 4) then
   set DNAME = HK01
   set Dk = 1
   set DK = 01

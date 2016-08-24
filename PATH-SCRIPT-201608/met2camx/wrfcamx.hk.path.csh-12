@@ -15,7 +15,7 @@ set END_JDATE = $argv[2]
 
 echo '-------Get the parameter value for different Domain---------'
 set DOMAINS_GRID = 1
-foreach DOMAINS_RES ( $G_DOMAINS_RES_AQMS )
+foreach DOMAINS_RES ( $G_DOMAINS_RES_MET2CAMX )
 
 set NCOLS = ${NCOLS_AQMS_Dx[$DOMAINS_GRID]}
 set NROWS = ${NROWS_AQMS_Dx[$DOMAINS_GRID]}

@@ -23,8 +23,8 @@
  
  set DOMAINS_GRID = $argv[2]
  @ GRID_COARSE = $DOMAINS_GRID - 1
- set METIN_COARSE     = $OPDIR/inputs/met/${G_DOMAINS_RES[$GRID_COARSE]}km 
- set METIN     = $OPDIR/inputs/met/${G_DOMAINS_RES[$DOMAINS_GRID]}km 
+ set METIN_COARSE     = $OPDIR/inputs/met/${G_DOMAINS_RES_CMAQ[$GRID_COARSE]}km 
+ set METIN     = $OPDIR/inputs/met/${G_DOMAINS_RES_CMAQ[$DOMAINS_GRID]}km 
  set APPL     = cb05cl
  set CFG      = V5g_cb05cl_ae5 
  set EXEC     = BCON_${CFG}
@@ -47,8 +47,8 @@
 #set run = run.OP_mm5_cb05cl 
 
  #set M3CONCIN = "/localdata/rkwok/cmaq/outputs/$run/27km"
- set M3CONCIN = "$CCTMOUTDIR/${G_DOMAINS_RES[$GRID_COARSE]}km"
- set OUTDIR   = "$OPDIR/inputs/icbc/${G_DOMAINS_RES[$DOMAINS_GRID]}km"
+ set M3CONCIN = "$CCTMOUTDIR/${G_DOMAINS_RES_CMAQ[$GRID_COARSE]}km"
+ set OUTDIR   = "$OPDIR/inputs/icbc/${G_DOMAINS_RES_CMAQ[$DOMAINS_GRID]}km"
  if ( ! -e $OUTDIR ) mkdir -p $OUTDIR
  
 set CUR_JDATE = $argv[1]
@@ -67,11 +67,11 @@ set CUR_JDATE = $argv[1]
 
 #> horizontal grid defn; check GRIDDESC file for GRID_NAME options
  setenv GRIDDESC $OPDIR/inputs/GRIDDESC 
- setenv GRID_NAME HKPATH_${G_DOMAINS_RES[$DOMAINS_GRID]}KM 
+ setenv GRID_NAME HKPATH_${G_DOMAINS_RES_CMAQ[$DOMAINS_GRID]}KM 
  setenv IOAPI_ISPH 19
 
 #> vertical layer defn
- setenv LAYER_FILE $METIN/METCRO3D.${G_DOMAINS_RES[$DOMAINS_GRID]}km.$G_DAY 
+ setenv LAYER_FILE $METIN/METCRO3D.${G_DOMAINS_RES_CMAQ[$DOMAINS_GRID]}km.$G_DAY 
 
 # set the path for the output file containing the BC's
 
@@ -157,8 +157,8 @@ set BC = m3conc       # use CMAQ CTM concentration files (nested runs)
     setenv CTM_PING_1
     setenv PING_PDM_1
 
-    setenv MET_CRO_3D_CRS $METIN_COARSE/METCRO3D.${G_DOMAINS_RES[$GRID_COARSE]}km.$G_DAY 
-    setenv MET_CRO_3D_FIN $METIN/METCRO3D.${G_DOMAINS_RES[$DOMAINS_GRID]}km.$G_DAY 
+    setenv MET_CRO_3D_CRS $METIN_COARSE/METCRO3D.${G_DOMAINS_RES_CMAQ[$GRID_COARSE]}km.$G_DAY 
+    setenv MET_CRO_3D_FIN $METIN/METCRO3D.${G_DOMAINS_RES_CMAQ[$DOMAINS_GRID]}km.$G_DAY 
 
     setenv MECH_CONV_FILE
 

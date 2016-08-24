@@ -33,7 +33,7 @@ END_GDATE=`/bin/date -d "${INIT_GDATE} $n days" +%Y%m%d`
 
 FileTypes="GRIDBDY2D GRIDCRO2D GRIDDOT2D METBDY3D METCRO2D METCRO3D METDOT3D"
 
-for DOMAINS_RES in ${G_DOMAINS_RES_AQMS_gov}
+for DOMAINS_RES in ${G_DOMAINS_RES_gov}
 do
   if [ ! -d outputs/${DOMAINS_RES} ]; then
     echo "${DOMAINS_RES} directory does not exist"

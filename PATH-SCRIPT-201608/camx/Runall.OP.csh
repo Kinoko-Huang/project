@@ -42,7 +42,7 @@ echo $BEG_JDATE $END_JDATE
 ##### Step 2 Prepare ahomap file for CAMx #########
   cd $AHOMAP/work
   set DOMAINS_GRID = 1
-  foreach DOMAINS_RES ($G_DOMAINS_RES)
+  foreach DOMAINS_RES ($G_DOMAINS_RES_CAMX)
     csh -f $AHOMAP/work/ahomap.hk${BEG_H}z.job $BEG_JDATE $END_JDATE $DOMAINS_GRID $DOMAINS_RES
     @ DOMAINS_GRID ++
   end
@@ -56,7 +56,7 @@ echo $BEG_JDATE $END_JDATE
 #
 ##### Step 3 Prepare tuv file for CAMx ############
   cd $TUV
-  foreach DOMAINS_RES ($G_DOMAINS_RES)
+  foreach DOMAINS_RES ($G_DOMAINS_RES_CAMX)
     csh -f tuv4.0_1.hkpath.job   $BEG_JDATE $END_JDATE $DOMAINS_RES
   end
   if ( $status != 0) then

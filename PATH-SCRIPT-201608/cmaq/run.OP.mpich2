@@ -22,7 +22,7 @@ set DOMAINS_GRID = $argv[4]
 #set NEW_START  = false    #always FALSE for restart
 
 #> horizontal grid defn; check GRIDDESC file for GRID_NAME options
-set DOMAINS_RES = ${G_DOMAINS_RES[$DOMAINS_GRID]}
+set DOMAINS_RES = ${G_DOMAINS_RES_CMAQ[$DOMAINS_GRID]}
 setenv GRIDDESC $OPDIR/inputs/GRIDDESC 
 setenv GRID_NAME HKPATH_${DOMAINS_RES}KM 
 

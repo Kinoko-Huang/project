@@ -46,7 +46,7 @@ DataPath=Output
 Prefix=camx
 
 #for DOMAINS_RES in 1 3 9 27
-for DOMAINS_RES in $G_DOMAINS_RES_AQMS_gov
+for DOMAINS_RES in $G_DOMAINS_RES_gov
 do
   for ft in $FileTypes
   do

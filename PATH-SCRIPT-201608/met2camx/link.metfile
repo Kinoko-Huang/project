@@ -53,7 +53,7 @@ CUR_TIME=$BEG_TIME
 while [ $CUR_TIME -le $END_TOM_TIME ]
 do
   DOMAINS_GRID=1
-  for DOMAINS_RES in $G_DOMAINS_RES_AQMS_gov
+  for DOMAINS_RES in $G_DOMAINS_RES_gov
   do
     SourceFile="$METDir/${Prefix}_d0${DOMAINS_GRID}_${CUR_TIME:0:4}-${CUR_TIME:4:2}-${CUR_TIME:6:2}_${CUR_TIME:8:2}:00:00"
     [ -f $SourceFile ] || {

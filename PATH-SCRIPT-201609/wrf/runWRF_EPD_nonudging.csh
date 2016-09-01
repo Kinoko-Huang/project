@@ -53,7 +53,7 @@ cat << End_of_namelist > namelist.input.${case}
  time_step                           = 120,
  time_step_fract_num                 = 0,
  time_step_fract_den                 = 1,
- max_dom                             = ${#G_DOMAINS_RES_WRF},
+ max_dom                             = ${SIM_DOMAINS_WRF},
  s_we                                = 1,     1,     1,	   1,
  e_we                                = ${NCOLS_MMS_Dx[1]},   ${NCOLS_MMS_Dx[2]},   ${NCOLS_MMS_Dx[3]},  ${NCOLS_MMS_Dx[4]},
  s_sn                                = 1,     1,     1,    1,
@@ -74,7 +74,7 @@ cat << End_of_namelist > namelist.input.${case}
 				       0.2316, 0.1801, 0.1324, 0.0903,
                                        0.0542, 0.0241, 0.0000
  dx                                  = ${G_DOMAINS_RES_WRF[1]}000,   ${G_DOMAINS_RES_WRF[2]}000,   ${G_DOMAINS_RES_WRF[3]}000,	${G_DOMAINS_RES_WRF[4]}000,
- dy                                  = ${G_DOMAINS_RES_WRF[1]}000, 	${G_DOMAINS_RES_WRF[2]}000,   ${G_DOMAINS_RES_WRF[3]}000,	$${G_DOMAINS_RES_WRF[4]}000,
+ dy                                  = ${G_DOMAINS_RES_WRF[1]}000, 	${G_DOMAINS_RES_WRF[2]}000,   ${G_DOMAINS_RES_WRF[3]}000,	${G_DOMAINS_RES_WRF[4]}000,
  grid_id                             = 1,     2,     3,	   4,
  parent_id                           = 1,     1,     2,	   3,
  i_parent_start                      = ${COL_CUT_MMS_Dx[1]},     ${COL_CUT_MMS_Dx[2]},   ${COL_CUT_MMS_Dx[3]},   ${COL_CUT_MMS_Dx[4]},

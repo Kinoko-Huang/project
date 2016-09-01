@@ -1,0 +1,156 @@
+#! /bin/csh -f
+
+# RCS file, release, date & time of last delta, author, state, [and locker]
+# $Header: /project/work/rep/SCRIPTS/src/icon/run.icon,v 1.6 2006/09/25 18:03:33 sjr Exp $ 
+
+# ======================== ICONv4.7 Run Script ====================== #
+# Usage: run.icon >&! icon_e1a.log &                                  #
+# The following environment variables must be set for this script to  #
+# execute properly:                                                   #
+#   setenv M3DATA =  source code CVS archive                          #
+# To report problems or request help with this script/program:        #
+#             http://www.cmascenter.org/html/help.html                #
+# =================================================================== #
+
+ source ../../../domains_def.config
+
+ set APPL     = cb05cl
+ set CFG      = V5g_cb05cl_ae5
+ set EXEC     = ICON_${CFG}
+ setenv NPCOL_NPROW "1 1"
+
+ # Ying LI: add the species defination are required for the CMAQv5.0.1
+ set BLD      = $M3HOME/scripts/bcon/BLD_$APPL
+ set MECH     = cb05cl_ae5_aq 
+#> species defn
+ setenv gc_matrix_nml ${BLD}/GC_$MECH.nml
+ setenv ae_matrix_nml ${BLD}/AE_$MECH.nml
+ setenv nr_matrix_nml ${BLD}/NR_$MECH.nml
+ setenv tr_matrix_nml ${BLD}/Species_Table_TR_0.nml
+ setenv CSQY_DATA ${BLD}/CSQY_DATA_$MECH
+ if (! (-e $CSQY_DATA ) ) then
+   echo " $CSQY_DATA  not found "
+   exit 1
+ endif
+# Ying LI: add the species defination are required for the CMAQv5.0.1
+
+ set BASE     = $cwd
+
+ echo "Warning: $BASE/cfg.${CFG} does not exist"
+ #cd $BASE; date; set timestamp; cat $BASE/cfg.${CFG}; echo " "; set echo
+ cd $BASE; date; set timestamp; echo " "; set echo
+
+ set DOMAINS_GRID = $argv[2]
+ @ GRID_COARSE = $DOMAINS_GRID - 1
+ set METIN_COARSE     = $OPDIR/inputs/met/${G_DOMAINS_RES_CMAQ[$GRID_COARSE]}km
+ set METIN     = $OPDIR/inputs/met/${G_DOMAINS_RES_CMAQ[$DOMAINS_GRID]}km
+
+ #set M3CONCIN = "/localdata/rkwok/cmaq/outputs/$run/27km"
+ set M3CONCIN = "$CCTMOUTDIR/${G_DOMAINS_RES_CMAQ[$GRID_COARSE]}km"
+ set OUTDIR   = "$OPDIR/inputs/icbc/${G_DOMAINS_RES_CMAQ[$DOMAINS_GRID]}km"
+ if ( ! -e $OUTDIR ) mkdir -p $OUTDIR
+
+ set JDATE = $argv[1]
+ set G_DAY = `$UTILDIR/datelib/yyyyjjj2yyyymmdd $JDATE`
+
+#> horizontal grid defn; check GRIDDESC file for GRID_NAME options
+ setenv GRIDDESC $OPDIR/inputs/GRIDDESC 
+ setenv GRID_NAME HKPATH_${G_DOMAINS_RES_CMAQ[$DOMAINS_GRID]}KM 
+ setenv IOAPI_ISPH 19
+
+#> vertical layer defn
+ setenv LAYER_FILE $METIN/METCRO3D.${G_DOMAINS_RES_CMAQ[$DOMAINS_GRID]}km.$G_DAY
+
+##############################################################################
+# This script to run the ICON preprocessor has two major sections;           #
+# 1) use default profile inputs, or 2) use CMAQ CTM concentration files.     #
+# Follow these steps:                                                        #
+#   1) Set IC equal to "profile" or "m3conc"                                 #
+#   2) set the remainder of the environment variables for the section being  #
+#      used (see below)                                                      #
+##############################################################################
+
+# set IC = profile      # use default profile file
+set IC = m3conc       # use CMAQ CTM concentration files (nested runs)
+
+#> date or profile
+ if ( $IC == profile ) then
+    setenv INIT_CONC_1    "$OUTDIR/ICON_${APPL}_${GRID_NAME}_profile -v"     
+    endif
+ if ( $IC == m3conc ) then 
+    set DATE = $JDATE
+    setenv INIT_CONC_1    "$OUTDIR/ICON_${APPL}_${GRID_NAME}_${DATE} -v"     
+    rm -fv $INIT_CONC_1
+ endif  
+
+##############################################################################
+# Default profile environment variables                                      #
+#----------------------------------------------------------------------------#
+# IC_PROFILE     = the file containing the default IC profiles               #
+#                                                                            #
+# MECH_CONV_FL   = file containing mechanism conversion rules (optional) -   #
+#                  must be set if a user-defined mechanism conversion file   #
+#                  is being used                                             #
+#                                                                            #
+# NOTE: SDATE and STIME do not need to be set                                #
+##############################################################################
+
+ if ( $IC == profile ) then
+
+    setenv IC_PROFILE      $M3DATA/raw/icon/ic_profile_v7.dat
+
+#   setenv MECH_CONV_FILE  /home/ggb/models3/icbc/mech_conv_fl.v1
+
+    endif
+ 
+##############################################################################
+# CMAQ CTM concentration file environment variables (e.g., for nesting )     #
+#----------------------------------------------------------------------------#
+# CTM_CONC_1     = the CTM concentration file for the coarse domain          #
+#                                                                            #
+# ICON_PING      = flag controlling PinG IC's creation - must be set to YES  #
+#                  if PinG is included, otherwise set ICON_PING to NO        #
+#                                                                            #
+# CTM_PING_1     = the PinG concentration file for the coarse domain         #
+#                                                                            #
+# PING_PDM_1     = the PinG plume dynamics file for the coarse domain        #
+#                                                                            #
+# MET_CRO_3D_CRS = the MET_CRO_3D met file for the coarse domain - must be   #
+#                  set if PinG is included or if the vertical grid type is   #
+#                  changed between nests                                     #
+#                                                                            #
+# MET_CRO_3D_FIN = the MET_CRO_3D met file for the inner, nested, domain -   #
+#                  must be set if the vertical grid type is changed between  #
+#                  nests                                                     #
+#                                                                            #
+# MECH_CONV_FL   = file containing mechanism conversion rules (optional) -   #
+#                  must be set if a user-defined mechanism conversion file   #
+#                  is being used                                             #
+#                                                                            #
+# NOTE: SDATE (yyyyddd) and STIME (hhmmss) must always be set                #
+##############################################################################
+ 
+ if ( $IC == m3conc ) then 
+
+    #setenv CTM_CONC_1 $M3CONCIN/CCTM_v47_ebi_cb05cl_ae5_aq_mpi_pg64_mpich2.CONC.$JDATE 
+    setenv CTM_CONC_1 $M3CONCIN/CCTM_V5g_ebi_cb05cl_ae5_aq_mpich2.CONC.$JDATE 
+
+    setenv ICON_PING NO
+
+    setenv CTM_PING_1
+    setenv PING_PDM_1
+
+    setenv MET_CRO_3D_CRS $METIN_COARSE/METCRO3D.${G_DOMAINS_RES_CMAQ[$GRID_COARSE]}km.$G_DAY
+    setenv MET_CRO_3D_FIN $METIN/METCRO3D.${G_DOMAINS_RES_CMAQ[$DOMAINS_GRID]}km.$G_DAY
+
+    setenv MECH_CONV_FILE
+
+    setenv SDATE           ${DATE}
+    setenv STIME  ${INIT_H}0000       
+
+    endif
+
+#> Executable call:
+ /usr/bin/time $BASE/$EXEC
+
+#end

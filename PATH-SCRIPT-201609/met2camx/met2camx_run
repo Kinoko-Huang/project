@@ -1,0 +1,150 @@
+#!/bin/sh
+#
+MYDIR=`/usr/bin/dirname $0`
+cd $MYDIR || exit 1
+MYDIR=`/bin/pwd`
+MYNAME=`/bin/basename $0`
+
+ECHO="echo LOG:${MYNAME}:"
+
+if [ $# -eq 2 ]; then
+  INIT_TIME=$1
+  MetData=$2
+else
+  $ECHO "Usage: Init_time Met_data"
+  $ECHO " e.g.: 2004090600 mm5"
+  exit 1
+fi
+
+if [ "$MetData" = "mm5" ]; then
+  $ECHO "MetData == mm5 is not supported"
+  exit 1
+  WorkDir=$MYDIR/work_mm5
+  LinkProg=./link.mm5file
+  Met2Camx=./mm5camx.hk.path.csh
+  Prefix=mm5out
+  export MM5TCAMx=$MYDIR
+elif [ "$MetData" = "wrf" ]; then
+  WorkDir=$MYDIR/work_wrf
+  LinkProg=./link.wrffile
+  Met2Camx=./wrfcamx.hk.path.csh
+  Prefix=wrfout
+  export WRFTCAMx=$MYDIR
+else
+  $ECHO "Invalid Met_data name ${MetData}, must be mm5 or wrf"
+  exit 1
+fi 
+if [ $DAY1FIXED -eq 1 ]; then
+  MET=${DATA_MET_INPUT}.day1fixed
+else
+  MET=${DATA_MET_INPUT}
+fi
+OUTPUT=$DATA_M2CX_OUTPUT
+
+echo "MET=$MET OUTPUT=$OUTPUT"
+
+if [ ${#INIT_TIME} -ne 10 ]; then
+  $ECHO "Invalid initial datetime $INIT_TIME, must be in YYYYMMDDhh format"
+  exit 1
+fi
+
+tt=`/bin/date -d "${INIT_TIME:0:8} ${INIT_TIME:8:2}:00:00" +%Y%m%d%H 2>/dev/null` || {
+  $ECHO "Invalid initial datetime $INIT_TIME"
+  exit 1
+}
+
+if [ "$tt" != "$INIT_TIME" ]; then
+  $ECHO "Invalid initial datetime $INIT_TIME"
+  exit 1
+fi
+
+INIT_H=${INIT_TIME:8:2}
+if [ "$INIT_H" != "00" -a "$INIT_H" != "12" ]; then
+  $ECHO "Invalid initial datetime $INIT_TIME, initial hour must be 00 or 12"
+  exit 1
+fi
+ 
+MetData="$MET/${INIT_TIME:0:4}/${INIT_TIME:0:6}/${INIT_TIME}"
+if [ ! -e $MetData ]; then
+  $ECHO "No input Met data in $MetData"
+  exit 1
+fi
+
+if [ -d Output ]; then
+  /bin/rm -r Output
+fi
+
+cd $WorkDir || {
+  $ECHO "Failed to change directory to $WorkDir"
+  exit 1
+}
+
+# CTM initial date
+BEG_GDATE=`/bin/date -d "${INIT_TIME:0:8} $CTM_SKIP_N_DAYS days" +%Y%m%d`
+# CTM ending  date
+END_TOM_GDATE=`/bin/date -d "${BEG_GDATE:0:8} $CTM_SIM_N_DAYS days"  +%Y%m%d`
+# CTM ending  date - 1
+END_GDATE=`/bin/date -d "${END_TOM_GDATE:0:8} 1 day ago"  +%Y%m%d`
+
+$ECHO BEG_GDATE=$BEG_GDATE END_TOM_GDATE=$END_TOM_GDATE
+
+BEG_JDATE=`$PATH_SYSDIR/bin/g2j ${BEG_GDATE:0:4} ${BEG_GDATE:4:2} ${BEG_GDATE:6:2}` || {
+  $ECHO $BEG_JDATE
+  exit 1
+}
+END_TOM_JDATE=`$PATH_SYSDIR/bin/g2j ${END_TOM_GDATE:0:4} ${END_TOM_GDATE:4:2} ${END_TOM_GDATE:6:2}` || {
+  $ECHO $END_TOM_JDATE
+  exit 1
+}
+END_JDATE=`$PATH_SYSDIR/bin/g2j ${END_GDATE:0:4} ${END_GDATE:4:2} ${END_GDATE:6:2}` || {
+  $ECHO $END_JDATE
+  exit 1
+}
+
+$ECHO BEG_JDATE=$BEG_JDATE END_TOM_JDATE=$END_TOM_JDATE END_JDATE=$END_JDATE
+
+/usr/bin/find . -type l -name "${Prefix}_d0*" -exec /bin/rm -f {} \;
+
+$ECHO $LinkProg $BEG_JDATE $END_TOM_JDATE $INIT_H $MET
+$LinkProg $BEG_JDATE $END_TOM_JDATE $INIT_H $MET || {
+  $ECHO "Failed to run $LinkProg $BEG_JDATE $END_TOM_JDATE $MET in $WorkDir"
+  exit 1
+}
+Met2Camx=${Met2Camx}-${INIT_H}
+$ECHO $Met2Camx $BEG_JDATE $END_JDATE
+$Met2Camx $BEG_JDATE $END_JDATE || {
+  $ECHO "Failed to run $Met2Camx $BEG_JDATE $END_JDATE"
+  exit 1
+}
+cd $MYDIR || exit 1
+./check_output ${BEG_GDATE} ${END_TOM_GDATE} || {
+  $ECHO "Failed to run ./check_output ${BEG_GDATE} ${END_TOM_GDATE}"
+  exit 1
+} 
+
+OUTPUTData=$OUTPUT/${INIT_TIME:0:4}/${INIT_TIME:0:6}/${INIT_TIME}
+if [ -d $OUTPUTData ]; then
+  $ECHO "Output data directory $OUTPUTData already exists"
+  if [ $CTM_CLEAN_OUTPUT -eq 1 ]; then
+    $ECHO "Remove $OUTPUTData"
+    /bin/rm -f -r $OUTPUTData
+  else
+    $ECHO "Keep $OUTPUTData"
+  fi
+fi
+
+if [ ! -d $OUTPUTData ]; then
+  /bin/mkdir -p $OUTPUTData || {
+    $ECHO "Failed to create output directory $OUTPUTData"
+    exit 1
+  }
+fi
+
+/usr/bin/rsync -av $MYDIR/Output/ $OUTPUTData/ || {
+  $ECHO "Failed to save data to $OUTPUTData"
+  exit 1
+}
+
+$ECHO "Output saved to $OUTPUTData"
+
+exit 0

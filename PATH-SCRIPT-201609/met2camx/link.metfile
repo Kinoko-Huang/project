@@ -1,0 +1,72 @@
+#!/bin/sh
+##
+##
+############# Link the MM5 files here ################## 
+##
+if [ $# -eq 4 ]; then
+  BEG_JDATE=$1
+  END_TOM_JDATE=$2
+  INIT_H=$3
+  METDATA=$4
+else
+  echo "Usage: $0 BEG_JDATE END_TOM_JDATE MET_directory Initial_hour"
+  echo " e.g.: $0 2004251 2004253 /home/dataop/data/nmodel/path_mm5_hist 12"
+  exit 1
+fi
+
+MYNAME=`/bin/basename $0`
+
+if [ "$MYNAME" = "link.mm5file" ]; then
+  Prefix=mm5out
+elif [ "$MYNAME" = "link.wrffile" ]; then
+  Prefix=wrfout
+else
+  echo "Invalid program name $MYNAME, must be link.mm5file or link.wrffile"
+  exit 1
+fi
+
+if [ "$INIT_H" != "00" -a "$INIT_H" != "12" ]; then
+  echo "Invalid initial hour $INIT_H, it must be 00 or 12"
+  exit 1
+fi
+
+BEG_GDATE=( `$PATH_SYSDIR/bin/j2g ${BEG_JDATE}` )
+BEG_TIME=${BEG_GDATE[0]}${BEG_GDATE[1]}${BEG_GDATE[2]}${INIT_H}
+
+# Get the MM5/WRF data directory, which is $CTM_SKIP_N_DAYS earlier than CTM initial time
+#
+INIT_TIME=`/bin/date -d "${BEG_TIME:0:8} ${BEG_TIME:8:2}:00:00 $CTM_SKIP_N_DAYS days ago" +%Y%m%d%H`
+METDir=${METDATA}/${INIT_TIME:0:4}/${INIT_TIME:0:6}/${INIT_TIME}
+if [ ! -e $METDir ]; then
+  echo "Input Direcotry $METDir does not exist"
+  exit 1
+fi
+
+echo Input data directory $METDir
+
+END_TOM_GDATE=( `$PATH_SYSDIR/bin/j2g ${END_TOM_JDATE}` )
+END_TOM_TIME=${END_TOM_GDATE[0]}${END_TOM_GDATE[1]}${END_TOM_GDATE[2]}${INIT_H}
+
+echo "${MYNAME}: Linked file time period ${BEG_TIME} - ${END_TOM_TIME}"
+
+CUR_TIME=$BEG_TIME
+while [ $CUR_TIME -le $END_TOM_TIME ]
+do
+  DOMAINS_GRID=1
+  for DOMAINS_RES in $G_DOMAINS_RES_gov
+  do
+    SourceFile="$METDir/${Prefix}_d0${DOMAINS_GRID}_${CUR_TIME:0:4}-${CUR_TIME:4:2}-${CUR_TIME:6:2}_${CUR_TIME:8:2}:00:00"
+    [ -f $SourceFile ] || {
+      echo "${MYNAME}: Linked file $SourceFile does not exist"
+      exit 1
+    }
+    /bin/ln -sf $SourceFile . || {
+      echo "Failed to run /bin/ln -sf $SourceFile . in `/bin/pwd`"
+      exit 1
+    }
+    DOMAINS_GRID=$[DOMAINS_GRID+1]
+  done
+  CUR_TIME=`/bin/date -d "${CUR_TIME:0:8} ${CUR_TIME:8:2}:00:00 1 hour" +%Y%m%d%H`
+done
+
+exit 0

@@ -32,7 +32,7 @@ ln -sf ungrib/Variable_Tables/Vtable.GFS Vtable
 cat << End_of_namelist > namelist.wps.${case}
 &share
  wrf_core = 'ARW',
- max_dom = ${#G_DOMAINS_RES_WRF},
+ max_dom = ${SIM_DOMAINS_WRF},
  start_date = '${INIT_Y}-${INIT_M}-${INIT_D}_${INIT_H}:00:00','${INIT_Y}-${INIT_M}-${INIT_D}_${INIT_H}:00:00','${INIT_Y}-${INIT_M}-${INIT_D}_${INIT_H}:00:00','${INIT_Y}-${INIT_M}-${INIT_D}_${INIT_H}:00:00',
  end_date   = '${END_Y}-${END_M}-${END_D}_${INIT_H}:00:00','${END_Y}-${END_M}-${END_D}_${INIT_H}:00:00','${END_Y}-${END_M}-${END_D}_${INIT_H}:00:00','${END_Y}-${END_M}-${END_D}_${INIT_H}:00:00',
  interval_seconds = 21600
@@ -42,9 +42,9 @@ cat << End_of_namelist > namelist.wps.${case}
 &geogrid
  parent_id         =   1,   1,	2,  3,
  parent_grid_ratio =   ${GRID_RATIO_MMS_Dx[1]},   ${GRID_RATIO_MMS_Dx[2]},  ${GRID_RATIO_MMS_Dx[3]},  ${GRID_RATIO_MMS_Dx[4]},
- i_parent_start    =   ${COL_CUT_MMS_Dx[1]},   ${COL_CUT_MMS_Dx[2]},$${COL_CUT_MMS_Dx[3]}, $${COL_CUT_MMS_Dx[4]},
+ i_parent_start    =   ${COL_CUT_MMS_Dx[1]},   ${COL_CUT_MMS_Dx[2]},${COL_CUT_MMS_Dx[3]}, ${COL_CUT_MMS_Dx[4]},
  j_parent_start    =   ${ROW_CUT_MMS_Dx[1]},   ${ROW_CUT_MMS_Dx[2]}, ${ROW_CUT_MMS_Dx[3]}, ${ROW_CUT_MMS_Dx[4]},
- e_we              =  ${NCOLS_MMS_Dx[1]},  $${NCOLS_MMS_Dx[2]}, ${NCOLS_MMS_Dx[3]}, ${NCOLS_MMS_Dx[4]},
+ e_we              =  ${NCOLS_MMS_Dx[1]},  ${NCOLS_MMS_Dx[2]}, ${NCOLS_MMS_Dx[3]}, ${NCOLS_MMS_Dx[4]},
  e_sn              =  ${NROWS_MMS_Dx[1]},  ${NROWS_MMS_Dx[2]}, ${NROWS_MMS_Dx[3]}, ${NROWS_MMS_Dx[4]},
  geog_data_res     = '10m','5m','2m','30s',
  dx = ${dx}000,
@@ -96,7 +96,7 @@ ln -sf ungrib/Variable_Tables/Vtable.SST Vtable
 cat << End_of_namelist > namelist.wps.${case}
 &share
  wrf_core = 'ARW',
- max_dom = ${#G_DOMAINS_RES_WRF},
+ max_dom = ${SIM_DOMAINS_WRF},
  start_date = '${INIT_Y}-${INIT_M}-${INIT_D}_${INIT_H}:00:00','${INIT_Y}-${INIT_M}-${INIT_D}_${INIT_H}:00:00','${INIT_Y}-${INIT_M}-${INIT_D}_${INIT_H}:00:00','${INIT_Y}-${INIT_M}-${INIT_D}_${INIT_H}:00:00',
  end_date   = '${END_Y}-${END_M}-${END_D}_${INIT_H}:00:00','${END_Y}-${END_M}-${END_D}_${INIT_H}:00:00','${END_Y}-${END_M}-${END_D}_${INIT_H}:00:00','${END_Y}-${END_M}-${END_D}_${INIT_H}:00:00',
  interval_seconds = 21600
@@ -106,9 +106,9 @@ cat << End_of_namelist > namelist.wps.${case}
 &geogrid
  parent_id         =   1,   1,  2,  3,
  parent_grid_ratio =   ${GRID_RATIO_MMS_Dx[1]},   ${GRID_RATIO_MMS_Dx[2]},  ${GRID_RATIO_MMS_Dx[3]},  ${GRID_RATIO_MMS_Dx[4]},
- i_parent_start    =   ${COL_CUT_MMS_Dx[1]},   ${COL_CUT_MMS_Dx[2]},$${COL_CUT_MMS_Dx[3]}, $${COL_CUT_MMS_Dx[4]},
+ i_parent_start    =   ${COL_CUT_MMS_Dx[1]},   ${COL_CUT_MMS_Dx[2]}, ${COL_CUT_MMS_Dx[3]}, ${COL_CUT_MMS_Dx[4]},
  j_parent_start    =   ${ROW_CUT_MMS_Dx[1]},   ${ROW_CUT_MMS_Dx[2]}, ${ROW_CUT_MMS_Dx[3]}, ${ROW_CUT_MMS_Dx[4]},
- e_we              =  ${NCOLS_MMS_Dx[1]},  $${NCOLS_MMS_Dx[2]}, ${NCOLS_MMS_Dx[3]}, ${NCOLS_MMS_Dx[4]},
+ e_we              =  ${NCOLS_MMS_Dx[1]},  ${NCOLS_MMS_Dx[2]}, ${NCOLS_MMS_Dx[3]}, ${NCOLS_MMS_Dx[4]},
  e_sn              =  ${NROWS_MMS_Dx[1]},  ${NROWS_MMS_Dx[2]}, ${NROWS_MMS_Dx[3]}, ${NROWS_MMS_Dx[4]},
  geog_data_res     = '10m','5m','2m','30s',
  dx = ${dx}000,
@@ -153,7 +153,7 @@ echo
 cat << End_of_namelist > namelist.wps.${case}
 &share
  wrf_core = 'ARW',
- max_dom = ${MET_SIM_N_DOMAINS},
+ max_dom = ${SIM_DOMAINS_WRF},
  start_date = '${INIT_Y}-${INIT_M}-${INIT_D}_${INIT_H}:00:00','${INIT_Y}-${INIT_M}-${INIT_D}_${INIT_H}:00:00','${INIT_Y}-${INIT_M}-${INIT_D}_${INIT_H}:00:00','${INIT_Y}-${INIT_M}-${INIT_D}_${INIT_H}:00:00',
  end_date   = '${END_Y}-${END_M}-${END_D}_${INIT_H}:00:00','${END_Y}-${END_M}-${END_D}_${INIT_H}:00:00','${END_Y}-${END_M}-${END_D}_${INIT_H}:00:00','${END_Y}-${END_M}-${END_D}_${INIT_H}:00:00',
  interval_seconds = 21600
@@ -163,9 +163,9 @@ cat << End_of_namelist > namelist.wps.${case}
 &geogrid
  parent_id         =   1,   1,  2,  3,
  parent_grid_ratio =   ${GRID_RATIO_MMS_Dx[1]},   ${GRID_RATIO_MMS_Dx[2]},  ${GRID_RATIO_MMS_Dx[3]},  ${GRID_RATIO_MMS_Dx[4]},
- i_parent_start    =   ${COL_CUT_MMS_Dx[1]},   ${COL_CUT_MMS_Dx[2]},$${COL_CUT_MMS_Dx[3]}, $${COL_CUT_MMS_Dx[4]},
+ i_parent_start    =   ${COL_CUT_MMS_Dx[1]},   ${COL_CUT_MMS_Dx[2]},${COL_CUT_MMS_Dx[3]}, ${COL_CUT_MMS_Dx[4]},
  j_parent_start    =   ${ROW_CUT_MMS_Dx[1]},   ${ROW_CUT_MMS_Dx[2]}, ${ROW_CUT_MMS_Dx[3]}, ${ROW_CUT_MMS_Dx[4]},
- e_we              =  ${NCOLS_MMS_Dx[1]},  $${NCOLS_MMS_Dx[2]}, ${NCOLS_MMS_Dx[3]}, ${NCOLS_MMS_Dx[4]},
+ e_we              =  ${NCOLS_MMS_Dx[1]},  ${NCOLS_MMS_Dx[2]}, ${NCOLS_MMS_Dx[3]}, ${NCOLS_MMS_Dx[4]},
  e_sn              =  ${NROWS_MMS_Dx[1]},  ${NROWS_MMS_Dx[2]}, ${NROWS_MMS_Dx[3]}, ${NROWS_MMS_Dx[4]},
  geog_data_res     = '10m','5m','2m','30s',
  dx = ${dx}000,

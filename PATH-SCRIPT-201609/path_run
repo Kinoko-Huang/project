@@ -54,8 +54,8 @@ if [ ${#INIT_TIME} -ne 10 ]; then
   exit 1
 fi
 
-TEMP_TIME=`/bin/date -d "${INIT_TIME:0:8} ${INIT_TIME:8:2}:00:00" +%Y%m%d%H 2>/dev/null`
-if [ "$INIT_TIME" != "$TEMP_TIME" ]; then
+D=`/bin/date -d "${INIT_TIME:0:8} ${INIT_TIME:8:2}:00:00" +%Y%m%d%H 2>/dev/null`
+if [ "$INIT_TIME" != "$D" ]; then
   $ECHO "Invalid initial time ${INIT_TIME}" >> $MAINLOG
   exit 1
 fi

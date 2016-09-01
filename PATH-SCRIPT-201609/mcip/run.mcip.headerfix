@@ -1,0 +1,75 @@
+#!/bin/csh -v
+
+source ../../domains_def.config
+
+set CASE_root = $argv[1]
+
+set DOMAINS_GRID = 1
+foreach DOMAINS_RES ( ${G_DOMAINS_RES_MCIP} )
+
+set XORIG_CRO = `expr ${XCRO_AQMS_Dx[$DOMAINS_GRID]} \* 1000`
+set YORIG_CRO = `expr ${YCRO_AQMS_Dx[$DOMAINS_GRID]} \* 1000`
+set XORIG_DOT = `expr ${XDOT_AQMS_Dx[$DOMAINS_GRID]} \* 1000`
+set YORIG_DOT = `expr ${YDOT_AQMS_Dx[$DOMAINS_GRID]} \* 1000`
+set XCELL     = ${DOMAINS_RES}000
+set YCELL     = ${DOMAINS_RES}000
+
+##set METPATH = "/disk40/hongkong/cmaq/inputs/met/wrf/${DOMAINS_RES}km"
+set METPATH = ${CASE_root}/${DOMAINS_RES}
+set edhdr_root = . 
+
+#
+##set LCP params for CRO+BDY files
+#
+foreach type (GRIDBDY2D GRIDCRO2D METBDY3D METCRO2D METCRO3D)
+foreach f ($METPATH/${type}.${DOMAINS_RES}km.????????) 
+
+setenv INFILE $f 
+
+${edhdr_root}/m3edhdr << EOF
+INFILE
+1
+$LAMBERT_TRUE_LAT1
+$LAMBERT_TRUE_LAT2
+$LAMBERT_CEN_MERDIAN
+$LAMBERT_CEN_LON
+$LAMBERT_CEN_LAT
+2
+$XORIG_CRO
+$YORIG_CRO
+$XCELL
+$YCELL
+10
+EOF
+
+end #end of foreach f
+end #end of foreach type
+
+#
+##set LCP params for DOT files
+#
+foreach type (GRIDDOT2D METDOT3D)
+foreach f ($METPATH/${type}.${DOMAINS_RES}km.????????) 
+
+setenv INFILE $f 
+
+${edhdr_root}/m3edhdr << EOF
+INFILE
+1
+$LAMBERT_TRUE_LAT1
+$LAMBERT_TRUE_LAT2
+$LAMBERT_CEN_MERDIAN
+$LAMBERT_CEN_LON
+$LAMBERT_CEN_LAT
+2
+$XORIG_DOT
+$YORIG_DOT
+$XCELL
+$YCELL
+10
+EOF
+
+end #end of foreach f
+end #end of foreach type
+@ DOMAINS_GRID ++
+end #end of foreach DOMAINS_RES

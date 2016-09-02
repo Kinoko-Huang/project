@@ -1,0 +1,52 @@
+#!/bin/sh
+#
+# Search CMAQ output data for day0 and link the data files to input directory
+#
+if [ $# -eq 1 ]; then
+  INIT_TIME=$1
+else
+  echo "Usage: $0 YYYYMMDDhh"
+  exit 1
+fi
+
+PATH_SYSDIR=${PATH_SYSDIR-/home/pathsys}
+DATA_CMAQ_OUTPUT=${DATA_CMAQ_OUTPUT-/home/pathop/data/cmaq}
+
+Output1_init_time=`/bin/date -d "${INIT_TIME:0:8} ${INIT_TIME:8:2}:00:00 1 day  ago" +%Y%m%d%H`
+Output2_init_time=`/bin/date -d "${INIT_TIME:0:8} ${INIT_TIME:8:2}:00:00 2 days ago" +%Y%m%d%H`
+Output3_init_time=`/bin/date -d "${INIT_TIME:0:8} ${INIT_TIME:8:2}:00:00 3 days ago" +%Y%m%d%H`
+
+Prefix=CCTM_V5g_ebi_cb05cl_ae5_aq_mpich2
+
+INIT_JDATE=`${PATH_SYSDIR}/bin/ymd2yj ${INIT_TIME:0:8}`
+if [ $FC_MODE -eq 1 ]; then
+  INIT_JDATE=`${PATH_SYSDIR}/bin/yj_prev $INIT_JDATE`
+fi
+for Output_init_time in $Output1_init_time $Output2_init_time $Output3_init_time
+do
+  OutputDir=${DATA_CMAQ_OUTPUT}/${Output_init_time:0:4}/${Output_init_time:0:6}/${Output_init_time}
+  if [ ! -e $OutputDir ]; then
+    echo "Output directory ${OutputDir} does not exist"
+    continue
+  fi
+for DOMAINS_RES in $G_DOMAINS_RES_gov
+  files=`/usr/bin/find $OutputDir/${DOMAINS_RES}km -mindepth 1 -maxdepth 1 -type f -name   "${Prefix}.*.${INIT_JDATE}" -print`   
+  if [ -z $files ]; then
+    echo "No valid CCTM_V5g_ebi_cb05cl_ae5_aq_mpi_pg64_mpich2....${INIT_YES_JDATE} found in $OutputDir"
+    continue
+  fi
+  do
+    CMAQ_output_dir=outputs/run.OP_mm5_cb05cl/${DOMAINS_RES}km
+    if [ ! -d $CMAQ_output_dir ]; then
+      /bin/mkdir -p $CMAQ_output_dir || {
+        echo "Failed to create $CMAQ_output_dir directory"
+        exit 1
+      }
+    fi
+    echo /bin/ln -sf $files $CMAQ_output_dir/
+    /bin/ln -sf $files $CMAQ_output_dir/
+  done
+  exit 0
+done
+echo "No valid output found for day0 = $INIT_TIME"
+exit 2

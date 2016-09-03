@@ -1,0 +1,295 @@
+#!/bin/sh
+#
+MYROOT=`/usr/bin/dirname $0`
+MYNAME=`/bin/basename $0`
+cd $MYROOT || exit 1
+MYDIR=`/bin/pwd`
+
+LOGDIR=$MYDIR/log
+MAINLOG=$LOGDIR/path.log
+TMPLOG=/tmp/path.log.$$
+
+ECHO="echo LOG:${MYNAME}:"
+
+Config_file=$MYDIR/path_run.config
+if [ ! -f $Config_file ]; then
+  echo "Fatal Error: Config file $Config_file does not exist" > /dev/stderr
+  exit 1
+fi
+source $Config_file > $TMPLOG
+
+## Allow only one instance of $MYDIR/$MYNAME under this run-time directory ##
+LOCK=$MYDIR/${MYNAME}.lock
+if [ -r $LOCK ]; then
+  $ECHO "Process $MYDIR/$MYNAME is locked" >> $MAINLOG
+  $PATH_SYSDIR/bin/email_alert
+  exit 1
+fi
+/bin/ln -sf /proc/$$ $LOCK || {
+  $ECHO "Failed to create lock file $LOCK" >> $MAINLOG
+  $PATH_SYSDIR/bin/email_alert
+  exit 1
+}
+trap '$PATH_SYSDIR/bin/email_alert; /bin/rm -f $LOCK' EXIT INT QUIT TERM
+#############################################################
+
+# Clean up logs
+/usr/bin/find $LOGDIR -type f -name '*.log' -exec /bin/rm {} \;
+
+/bin/mv $TMPLOG $MAINLOG
+
+if [ -z "$RUN_MODE" ]; then
+  export RUN_MODE=0
+fi
+
+if [ $# -eq 1 ]; then
+  INIT_TIME=$1
+else
+  $ECHO "Usage: $0 YYYYMMDDhh" >> $MAINLOG
+  exit 1
+fi
+
+if [ ${#INIT_TIME} -ne 10 ]; then
+  $ECHO "Invalid initial time, must be in YYYYMMDDhh" >> $MAINLOG
+  exit 1
+fi
+
+D=`/bin/date -d "${INIT_TIME:0:8} ${INIT_TIME:8:2}:00:00" +%Y%m%d%H 2>/dev/null`
+if [ "$INIT_TIME" != "$D" ]; then
+  $ECHO "Invalid initial time ${INIT_TIME}" >> $MAINLOG
+  exit 1
+fi
+
+if [ "${INIT_TIME:8:2}" != "00" -a "${INIT_TIME:8:2}" != "12" ]; then
+  $ECHO "Invaild hour of initial time ${INIT_TIME}, hour must be 00 or 12" >> $MAINLOG
+  exit 1
+fi
+
+{
+$ECHO "PATH INITIAL TIME = ${INIT_TIME}"
+$ECHO "PATH run-time directory = ${MYDIR}"
+$ECHO "PATH start time `/bin/date +%Y%m%d%H%M`"
+} >> $MAINLOG
+
+# Creaet data output directories if not exist
+[ $DO_MM5      -eq 0 -o -e $DATA_MM5_OUTPUT    ] ||  /bin/mkdir -p $DATA_MM5_OUTPUT
+[ $DO_WRF      -eq 0 -o -e $DATA_WRF_OUTPUT    ] ||  /bin/mkdir -p $DATA_WRF_OUTPUT
+[ $DO_MCIP     -eq 0 -o -e $DATA_MCIP_OUTPUT   ] ||  /bin/mkdir -p $DATA_MCIP_OUTPUT
+[ $DO_Met2CAMx -eq 0 -o -e $DATA_M2CX_OUTPUT   ] ||  /bin/mkdir -p $DATA_M2CX_OUTPUT
+[ $DO_CMAQ     -eq 0 -o -e $DATA_CMAQ_OUTPUT   ] ||  /bin/mkdir -p $DATA_CMAQ_OUTPUT
+[ $DO_CAMX     -eq 0 -o -e $DATA_CAMX_OUTPUT   ] ||  /bin/mkdir -p $DATA_CAMX_OUTPUT
+[ $DO_SMOKE    -eq 0 -o -e $DATA_SMOKE_OUTPUT  ] ||  /bin/mkdir -p $DATA_SMOKE_OUTPUT
+[ $DO_NAQPMS   -eq 0 -o -e $DATA_NAQPMS_OUTPUT ] ||  /bin/mkdir -p $DATA_NAQPMS_OUTPUT
+
+########## MM5  ###########
+
+if [ $DO_MM5 -eq 1 ]; then
+
+  LOGFILE=$LOGDIR/mm5.log
+
+  $ECHO "MM5 start time `/bin/date +%Y%m%d%H%M`"
+
+  cd $MM5_DIR || {
+    $ECHO "Failed to chdir to $MM5_DIR"
+    exit 1
+  }
+
+  ./mm5_run $INIT_TIME > $LOGFILE 2>&1 || {
+    $ECHO "Failed to run ./mm5_run $INIT_TIME"
+    $ECHO "Check log file in $LOGFILE"
+    exit 1
+  }
+
+  $ECHO "MM5 end time `/bin/date +%Y%m%d%H%M`"
+
+fi >> $MAINLOG
+
+########## WRF  ###########
+
+if [ $DO_WRF -eq 1 ]; then
+
+  LOGFILE=$LOGDIR/wrf.log
+
+  $ECHO "WRF start time `/bin/date +%Y%m%d%H%M`"
+
+  cd $WRF_DIR || {
+    $ECHO "Failed to chdir to $WRF_DIR"
+    exit 1
+  }
+
+  ./wrf_run $INIT_TIME > $LOGFILE 2>&1 || {
+    $ECHO "Failed to run ./wrf_run $INIT_TIME"
+    $ECHO "Check log file in $LOGFILE"
+    exit 1
+  }
+
+  $ECHO "WRF end time `/bin/date +%Y%m%d%H%M`"
+
+fi >> $MAINLOG
+
+########## MCIP ###########
+
+if [ $DO_MCIP -eq 1 ]; then
+
+  LOGFILE=$LOGDIR/mcip.log
+
+  $ECHO "MCIP start time `/bin/date +%Y%m%d%H%M`"
+
+  MCIP_INPUT=$DATA_MET_INPUT/${INIT_TIME:0:4}/${INIT_TIME:0:6}/$INIT_TIME
+
+  if [ "$DO_MCIP_data" = "mm5" ]; then
+    MCIP_RUN="./mcip_run mm5 ${INIT_TIME}"
+  elif [ "$DO_MCIP_data" = "wrf" ]; then
+    MCIP_RUN="./mcip_run wrf ${INIT_TIME}"
+  else
+    $ECHO "Invalid DO_MCIP_data = $DO_MCIP_data"
+    exit 1
+  fi
+
+  cd $MCIP_DIR || {
+    $ECHO "Failed to chdir to $MCIP_DIR"
+    exit 1
+  }
+
+  $MCIP_RUN > $LOGFILE 2>&1 || {
+    $ECHO "Failed to run $MCIP_RUN in `/bin/pwd`"
+    $ECHO "Check log file in $LOGFILE"
+    exit 1
+  }
+
+  $ECHO "MCIP output saved to $DATA_MCIP_OUTPUT"
+  $ECHO "MCIP end time `/bin/date +%Y%m%d%H%M`"
+
+fi >> $MAINLOG
+
+########### Met2CAMx #######
+
+if [ $DO_Met2CAMx -eq 1 ]; then
+
+  LOGFILE=$LOGDIR/met2camx.log
+
+  $ECHO "Met2CAMx start time `/bin/date +%Y%m%d%H%M`"
+
+  cd $Met2CAMx_DIR || {
+    $ECHO "Failed to change directory to $Met2CAMx_DIR"
+    exit 1
+  }
+
+  ./met2camx_run ${INIT_TIME} ${DO_Met2CAMx_data} > $LOGFILE 2>&1 || {
+    $ECHO "Failed to run ./met2camx_run ${INIT_TIME} ${DO_Met2CAMx_data}"
+    $ECHO "Check log file in $LOGFILE"
+    exit 1
+  }
+
+  $ECHO "Met2CAMx end time `/bin/date +%Y%m%d%H%M`"
+
+fi >> $MAINLOG
+
+########### SMOKE ##########
+
+if [ $DO_SMOKE -eq 1 ]; then
+
+  LOGFILE=$LOGDIR/smoke.log
+
+  $ECHO "SMOKE start time `/bin/date +%Y%m%d%H%M`"
+
+  cd $SMOKE_DIR || {
+    $ECHO "Failed to change directory to $SMOKE_DIR"
+    exit 1
+  }
+
+  ./smoke_run $INIT_TIME $DO_SMOKE_data > $LOGFILE 2>&1 || {
+    $ECHO "Failed to run ./smoke_run $INIT_TIME $DO_SMOKE_data in `/bin/pwd`"
+    exit 1
+  }
+
+  $ECHO "SMOKE end time `/bin/date +%Y%m%d%H%M`"
+
+fi >> $MAINLOG
+
+########### CMAQ ###########
+
+if [ $DO_CMAQ -eq 1 ]; then
+
+  LOGFILE=$LOGDIR/cmaq.log
+
+  $ECHO "CMAQ start time `/bin/date +%Y%m%d%H%M`"
+
+  cd $CMAQ_DIR || {
+    $ECHO "Failed to chdir to $CMAQ_DIR"
+    exit 1
+  }
+
+  ./cmaq_run $INIT_TIME > $LOGFILE 2>&1 || {
+    $ECHO "Failed to run ./cmaq_run $INIT_TIME in `/bin/pwd`"
+    $ECHO "Check log file in $LOGFILE"
+    exit 1
+  }
+
+  $ECHO "CMAQ output for $INIT_TIME saved to $DATA_CMAQ_OUTPUT"
+  $ECHO "CMAQ end time `/bin/date +%Y%m%d%H%M`"
+
+fi >> $MAINLOG
+
+########### CAMx ###########
+
+if [ $DO_CAMX -eq 1 ]; then
+
+  LOGFILE=$LOGDIR/camx.log
+
+  $ECHO "CAMx start time `/bin/date +%Y%m%d%H%M`"
+
+  cd $CAMX_DIR || {
+    $ECHO "Failed to chdir to $CAMX_DIR"
+    exit 1
+  }
+
+  ./camx_run $INIT_TIME > $LOGFILE 2>&1 || {
+    $ECHO "Failed to run ./camx_run $INIT_TIME in `/bin/pwd`"
+    $ECHO "Check log file in $LOGFILE"
+    exit 1
+  }
+
+  $ECHO "CAMx end time `/bin/date +%Y%m%d%H%M`"
+
+fi >> $MAINLOG
+
+########### NAQPMS ###########
+
+if [ $DO_NAQPMS -eq 1 ]; then
+
+  LOGFILE=$LOGDIR/naqpms.log
+
+  $ECHO "NAQPMS start time `/bin/date +%Y%m%d%H%M`"
+
+  cd $NAQPMS_DIR || {
+    $ECHO "Failed to chdir to $NAQPMS_DIR"
+    exit 1
+  }
+
+  ./naqpms_run $INIT_TIME > $LOGFILE 2>&1 || {
+    $ECHO "Failed to run ./naqpms_run $INIT_TIME in `/bin/pwd`"
+    $ECHO "Check log file in $LOGFILE"
+    exit 1
+  }
+
+  $ECHO "NAQPMS end time `/bin/date +%Y%m%d%H%M`"
+
+fi >> $MAINLOG
+
+PATH_ALERT_ON_SUCCESS=${PATH_ALERT_ON_SUCCESS:-1}
+if [ ${PATH_ALERT_ON_SUCCESS} -eq 1 ]; then
+  export PATH_ALERT_MSG="PATH run is successful"
+elif [ ${PATH_ALERT_ON_SUCCESS} -eq 0 ]; then
+  export PATH_ALERT_MSG=
+else
+  $ECHO "Unknown value in PATH_ALERT_ON_SUCCESS=$PATH_ALERT_ON_SUCCESS"
+  exit 1
+fi
+
+{
+$ECHO "PATH end time `/bin/date +%Y%m%d%H%M`"
+$ECHO $PATH_ALERT_MSG
+} >> $MAINLOG
+
+exit 0

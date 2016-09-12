@@ -1,0 +1,71 @@
+#!/bin/sh
+
+MYROOT=`/usr/bin/dirname $0`
+MYNAME=`/bin/basename $0`
+
+cd $MYROOT || exit 1
+MYDIR=`/bin/pwd`
+
+if [ $# -eq 1 ]; then
+  INIT_TIME=$1
+else 
+  echo "Usage: $0 YYYYMMDDhh"
+  exit 1
+fi
+
+INIT_TIME=$1
+if [ ${#INIT_TIME} -ne 10 ]; then
+  echo "Invalid initial time ${INIT_TIME}"
+  echo "Usage: $0 YYYYMMDDhh"
+  exit 1
+fi
+
+DT=`/bin/date -d "${INIT_TIME:0:8} ${INIT_TIME:8:2}:00:00" +%Y%m%d%H 2>/dev/null`
+if [ "$INIT_TIME" != "$DT" ]; then
+  echo "Invalid initial time ${INIT_TIME}"
+  echo "Usage: $0 YYYYMMDDhh"
+  exit 1
+fi
+
+INIT_DATE=`/bin/date -d "${INIT_TIME:0:8} $CTM_SKIP_N_DAYS days" +%Y%m%d`
+let "n = CTM_SIM_N_DAYS - 1"
+END_DATE=`/bin/date -d "${INIT_DATE} $n days" +%Y%m%d`
+
+FileTypes="GRIDBDY2D GRIDCRO2D GRIDDOT2D METBDY3D METCRO2D METCRO3D METDOT3D"
+
+#for dom in 1 3 9 27
+for dom in $DOMAINS
+do
+  if [ ! -d outputs/${dom} ]; then
+    echo "${dom} directory does not exist"
+    exit 1
+  fi
+  for ft in $FileTypes
+  do
+    da=${INIT_DATE}
+    Size=
+    while [ "$da" -le "$END_DATE" ]
+    do
+      OutFile="outputs/${dom}/${ft}.${dom}km.$da"
+      #OutFile="${dom}/${ft}_${dom}km.$da"
+      if [ -s $OutFile ]; then
+        fsize=`/usr/bin/stat -c "%s" $OutFile`
+        if [ -z ${Size} ]; then
+          Size=$fsize
+        fi
+        if [ $fsize != ${Size} ]; then
+          echo "Invalid MCIP output file $OutFile, size = $fsize"
+          exit 1
+        fi
+      else
+        echo $OutFile not exist
+        exit 1
+      fi
+      #echo $OutFile
+      da=`/bin/date -d "${da} 1 day" +%Y%m%d`
+    done
+  done
+done  
+
+echo "check_output ${INIT_TIME} ok"
+exit 0

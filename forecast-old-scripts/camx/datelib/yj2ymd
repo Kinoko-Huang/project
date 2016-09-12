@@ -1,0 +1,23 @@
+#!/bin/sh
+
+if [ $# -ne 1 ]; then
+  /bin/echo "Usage: $0 YYYYJJJ"
+  /bin/echo " e.g.: $0 2002100"
+  exit 1
+fi
+
+YJ=$1
+
+if [ ${#YJ} != 7 ]; then
+  /bin/echo "Usage: $0 YYYYJJJ"
+  /bin/echo " e.g.: $0 2002100"
+  exit 1
+fi
+
+Y=${YJ:0:4}
+J=${YJ:4:3}
+
+J1000=1$J
+let "J = J1000 - 1000"  # Remove if any leading zeros
+let "J = J - 1"
+/bin/date -d "${Y}0101 $J day" +%Y%m%d

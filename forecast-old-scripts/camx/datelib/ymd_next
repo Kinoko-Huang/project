@@ -1,0 +1,18 @@
+#!/bin/bash
+
+MYDIR=`/usr/bin/dirname $0`
+
+if [ $# -eq 1 ]; then
+  YMD=$1
+  N=1
+elif [ $# -eq 2 ]; then
+  YMD=$1
+  N=$2
+else
+  echo "Usage: $0 YYYYMMDD [n]"
+  echo " e.g.: $0 20080203 10"
+  exit 1
+fi
+
+YMD_NEXT=`/bin/date -d "$YMD $N day" +%Y%m%d` || exit 1
+echo $YMD_NEXT

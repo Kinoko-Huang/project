@@ -1,0 +1,247 @@
+#!/bin/csh -f
+#
+limit stacksize unlimited
+
+set EXEC      = $CAMxExec
+#
+set RUN     = "HKPATH.27"
+
+set CAMxIN  = "$CAMx_HOME/inputs"
+set ICBC    = "$CAMxIN/icbc"
+set EMIS    = "$CAMxIN/emiss"
+set EMIS27   = "$EMIS/merged/27km/area"
+set PTSRCE   = "$EMIS/merged/27km/ptsrc"
+set OUTPUT  = "$CAMxOUT/$RUN"
+set ICstart = "$OUTPUT"
+#
+mkdir -p $OUTPUT
+#
+#  --- Initialize the ring ---
+#
+if ( $?NProcs ) then
+  set NUMPROCS = $NProcs
+else
+  echo "NProcs is not set, default to be 16"
+  set NUMPROCS = 16
+endif
+#
+#  --- set the dates and times ----
+#
+
+set IJDAY = $argv[2]
+set BEGJDAY = $argv[1] #first day of simulation
+set ENDJDAY = $argv[1]
+
+set JDATE = $BEGJDAY
+set IYMD   = `$CAMx_HOME/datelib/yyyyjjj2yyyymmdd $IJDAY`
+set IYMD_PREV = `$CAMx_HOME/datelib/ymd_prev $IYMD`
+
+@ PREV_DATE = `$CAMx_HOME/datelib/yyyyjjj_plus_dd $JDATE -1` 
+
+set YEAR = `$CAMx_HOME/datelib/j2g $JDATE | awk '{print $1}'`
+set MM   = `$CAMx_HOME/datelib/j2g $JDATE | awk '{print $2}'`
+set DD   = `$CAMx_HOME/datelib/j2g $JDATE | awk '{print $3}'`
+set BDD  = $DD
+set BHH  = $HH
+
+if ( $BHH == "00" ) then
+  set EHH = 24
+  set EYYYYMMDD = $YEAR$MM$DD
+else 
+  set EHH = $BHH
+  set EYYYYMMDD = `$CAMx_HOME/datelib/ymd_next $YEAR$MM$DD`
+endif
+
+set EYEAR = `echo $EYYYYMMDD | cut -c 1-4`
+set EMM   = `echo $EYYYYMMDD | cut -c 5-6`
+set EDD   = `echo $EYYYYMMDD | cut -c 7-8`
+
+set BHH   = `echo $BHH | awk '{printf("%2.2d",$1)}'`
+set EHH   = `echo $EHH | awk '{printf("%2.2d",$1)}'`
+
+set YEARm1 = `$CAMx_HOME/datelib/j2g $PREV_DATE | awk '{print $1}'`
+set MMm1   = `$CAMx_HOME/datelib/j2g $PREV_DATE | awk '{print $2}'`
+set DDm1   = `$CAMx_HOME/datelib/j2g $PREV_DATE | awk '{print $3}'`
+
+set YY   = `echo $YEAR | awk  '{printf("%2.4d", $1)}'`
+set YYm1 = `echo $YEARm1 | awk '{printf("%2.4d", $1)}'`
+
+set TODAY     = ${YEAR}${MM}${DD}
+set YESTERDAY = ${YEARm1}${MMm1}${DDm1}
+
+set TODAY     = `echo $TODAY     | awk '{printf("%6.6d",$1)}'`
+set YESTERDAY = `echo $YESTERDAY | awk '{printf("%6.6d",$1)}'`
+
+if ($CTM_COLD_START == 0) then
+  if ( ! -f $ICstart/CAMx5.4.${RUN}.${IYMD_PREV}.inst ) then
+     set RESTART = "false"
+     set IC = "$ICBC/icon.camx.27km.$IJDAY.bin"
+  else
+     set RESTART = "true"
+     set IC = " "
+  endif
+else
+  set RESTART = "false"
+  set IC = "$ICBC/icon.camx.27km.$IJDAY.bin"
+endif
+
+echo CTM_COLD_START=$CTM_COLD_START
+echo RESTART=$RESTART
+
+set MET1 = $CAMx_HOME/inputs/met/27
+#
+#  --- Create the input file (always called CAMx.in)
+#
+cat << ieof > CAMx.in
+
+ &CAMx_Control
+
+ Run_Message      = 'CAMx v5.4 HKPATH 27km run',
+
+!--- Model clock control ---
+
+ Time_Zone        = 0,                 ! (0=UTC,5=EST,6=CST,7=MST,8=PST)
+ Restart          = .${RESTART}.,
+ Start_Date_Hour  = $YEAR,$MM,$BDD,${BHH}00,   ! (YYYY,MM,DD,HHmm)
+ End_Date_Hour    = $EYEAR,$EMM,$EDD,${EHH}00,   ! (YYYY,MM,DD,HHmm)
+
+ Maximum_Timestep    = 15.,            ! minutes
+ Met_Input_Frequency = 60.,            ! minutes
+ Ems_Input_Frequency = 60.,            ! minutes
+ Output_Frequency    = 60.,            ! minutes
+
+!--- Map projection parameters ---
+
+ Map_Projection           = 'LAMBERT',  ! (LAMBERT,POLAR,UTM,LATLON)
+ UTM_Zone                 = 0,
+ POLAR_Longitude_Pole     = 114.,     ! deg (west<0,south<0)
+ POLAR_Latitude_Pole      = 28.5,      ! deg (west<0,south<0)
+ LAMBERT_Central_Meridian =  114.,      ! deg (west<0,south<0)
+ LAMBERT_Center_Longitude =  114.,      ! deg (west<0,south<0)
+ LAMBERT_Center_Latitude  =  28.5,      ! deg (west<0,south<0)
+ LAMBERT_True_Latitude1   =  15.,      ! deg (west<0,south<0)
+ LAMBERT_True_Latitude2   =  40.,      ! deg (west<0,south<0)
+
+!--- Parameters for the master (first) grid ---
+
+ Number_of_Grids      = 1,
+ Master_Origin_XCoord = -2403.,         ! km or deg, SW corner of cell(1,1)
+ Master_Origin_YCoord = -1876.5,        ! km or deg, SW corner of cell (1,1)
+ Master_Cell_XSize    = 27.,           ! km or deg
+ Master_Cell_YSize    = 27.,           ! km or deg
+ Master_Grid_Columns  = 182,
+ Master_Grid_Rows     = 138,
+ Number_of_Layers(1)  = 26,
+
+!--- Model options ---
+
+ Diagnostic_Error_Check = .false.,      ! True = will stop after 1st timestep
+ Advection_Solver       = 'PPM',        ! (PPM,BOTT)
+ Chemistry_Solver       = 'EBI',        ! (EBI,IEH,LSODE)
+ PiG_Submodel           = 'None',       ! (None,GREASD,IRON)
+ Probing_Tool           = 'None',       ! (None,OSAT,GOAT,APCA,PSAT,DDM,PA,RTRAC)
+ Chemistry              = .true.,
+ Drydep_Model           = 'WESELY89',   ! (None,WESELY89,ZHANG03)
+ Wet_Deposition         = .true.,
+ TUV_Cloud_Adjust       = .false.,
+ ACM2_Diffusion         = .false.,
+ Staggered_Winds        = .true.,
+ Super_Stepping         = .true.,
+ Gridded_Emissions      = .true.,
+ Point_Emissions        = .true.,
+ Ignore_Emission_Dates  = .true.,
+
+!--- Output specifications ---
+
+ Root_Output_Name         = '$OUTPUT/CAMx5.4.$RUN.$TODAY',
+ Output_3D_Grid(1)        = .true.,  ! Set Average_Output_3D = .false.
+ HDF_Format_Output        = .false.,
+ Number_of_Output_Species  = 50,
+ Output_Species_Names(1)   = 'NO',
+ Output_Species_Names(2)   = 'NO2',
+ Output_Species_Names(3)   = 'O3',
+ Output_Species_Names(4)   = 'PAN',
+ Output_Species_Names(5)   = 'OLE',
+ Output_Species_Names(6)   = 'PAR',
+ Output_Species_Names(7)   = 'TOL',
+ Output_Species_Names(8)   = 'XYL',
+ Output_Species_Names(9)   = 'FORM',
+ Output_Species_Names(10)  = 'ALD2',
+ Output_Species_Names(11)  = 'ETH',
+ Output_Species_Names(11)  = 'CO',
+ Output_Species_Names(12)  = 'H2O2',
+ Output_Species_Names(13)  = 'HNO3',
+ Output_Species_Names(14)  = 'ISOP',
+ Output_Species_Names(15)  = 'MEOH',
+ Output_Species_Names(16)  = 'ETOH',
+ Output_Species_Names(17)  = 'SO2',
+ Output_Species_Names(18)  = 'SULF',
+ Output_Species_Names(19)  = 'ALDX',
+ Output_Species_Names(20)  = 'ETHA',
+ Output_Species_Names(21)  = 'IOLE',
+ Output_Species_Names(22)  = 'TERP',
+ Output_Species_Names(23)  = 'NH3',
+ Output_Species_Names(24)  = 'HCL',
+ Output_Species_Names(25)  = 'TOLA',
+ Output_Species_Names(26)  = 'XYLA',
+ Output_Species_Names(27)  = 'ISP',
+ Output_Species_Names(28)  = 'TRP',
+ Output_Species_Names(29)  = 'SQT',
+ Output_Species_Names(30)  = 'PNO3',
+ Output_Species_Names(31)  = 'PSO4',
+ Output_Species_Names(32)  = 'PNH4',
+ Output_Species_Names(33)  = 'POA',
+ Output_Species_Names(34)  = 'SOA1',
+ Output_Species_Names(35)  = 'SOA2',
+ Output_Species_Names(36)  = 'SOA3',
+ Output_Species_Names(37)  = 'SOA4',
+ Output_Species_Names(38)  = 'SOA5',
+ Output_Species_Names(39)  = 'SOA6',
+ Output_Species_Names(40)  = 'SOA7',
+ Output_Species_Names(41)  = 'SOPA',
+ Output_Species_Names(42)  = 'SOPB',
+ Output_Species_Names(43)  = 'PEC',
+ Output_Species_Names(44)  = 'FPRM',
+ Output_Species_Names(45)  = 'FCRS',
+ Output_Species_Names(46)  = 'CPRM',
+ Output_Species_Names(47)  = 'CCRS',
+ Output_Species_Names(48)  = 'NA',
+ Output_Species_Names(49)  = 'PCL',
+ Output_Species_Names(50)  = 'PH2O',
+
+!--- Input files ---
+
+ Chemistry_Parameters = '$CAMxIN/chem/CAMx5.4.chemparam.6_CF',
+ Photolyis_Rates      = '$CAMxIN/tuv/tuv_hk.${TODAY}.27km_CB05',
+ Initial_Conditions   = '$IC',
+ Boundary_Conditions  = '$ICBC/bc.camx.27km.$JDATE.uam',
+ Albedo_Haze_Ozone    = '$CAMxIN/ahomap/ahomap.hk.${TODAY}.27km',
+ Point_Sources        = '$PTSRCE/camx.hk.cb05.27km.ptsrc.${JDATE}.bin',
+ Master_Grid_Restart  = '$OUTPUT/CAMx5.4.$RUN.${YESTERDAY}.inst',
+ PiG_Restart          = ' ',
+
+ Emiss_Grid(1)   = '$EMIS27/emiss.camx.cb05.an.HK27_${JDATE}.uam',
+ Landuse_Grid(1) = '$MET1/camx_lu.${TODAY}.27km.bin',
+ ZP_Grid(1)      = '$MET1/camx_zp.${TODAY}.27km.bin',
+ Wind_Grid(1)    = '$MET1/camx_uv.${TODAY}.27km.bin',
+ Temp_Grid(1)    = '$MET1/camx_tp.${TODAY}.27km.bin',
+ Vapor_Grid(1)   = '$MET1/camx_qa.${TODAY}.27km.bin',
+ Cloud_Grid(1)   = '$MET1/camx_cr.${TODAY}.27km.bin',
+ Kv_Grid(1)      = '$MET1/camx_kv_ob70.${TODAY}.27km.bin',
+
+& END
+ /
+!-------------------------------------------------------------------------------
+
+ieof
+
+
+#
+#  --- Execute the model ---
+#
+if ( $START_MPD == 0 ) then
+  time $MPICH/bin/mpiexec -n $NUMPROCS $EXEC < /dev/null
+else
+  time $MPICH/bin/mpiexec -machinefile nodes -np $NUMPROCS $EXEC < /dev/null
+endif
+exit $status

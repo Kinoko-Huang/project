@@ -1,0 +1,68 @@
+#!/bin/csh -f 
+
+set JULBDATE = $argv[1]
+set JULEDATE = $argv[2]
+
+set BDATE = $JULBDATE
+set JULDATE = $JULBDATE
+echo $JULDATE $JULEDATE
+
+setenv CAMxExec $PATH_ROOTDIR/camx/src.v5.40/CAMx.v5.40.MPI.pg_linux
+
+./cleanup
+
+while ( $JULDATE <= $JULEDATE ) 
+  echo "Processing CAMx: D1 on $JULDATE "
+  csh -f CAMx_v5.40.hkpath.27km.MPI.job $JULDATE $BDATE >& msg/log.D1.$JULDATE
+  if ( $status != 0) then
+      echo "ERROR: Run CAMx_v5.40.hkpath.27km.MPI.job failed"
+      echo "ERROR in CAMx main program"
+      exit 1
+    else
+      echo "Finish D1"
+    endif
+  cd $BNDEXTR
+  csh -f bndextr.HKPATH.D34.job $JULDATE $BDATE 2 
+
+  cd $CAMx_HOME/runfiles
+  echo "Processing CAMx: D2 on $JULDATE "
+  csh -f CAMx_v5.40.hkpath.9km.MPI.job $JULDATE $BDATE >& msg/log.D2.$JULDATE
+  if ( $status != 0) then
+      echo "ERROR: Run CAMx_v5.40.hkpath.9km.MPI.job failed"
+      echo "ERROR in CAMx main program"
+      exit 1
+    else
+      echo "Finish D2"
+    endif
+  cd $BNDEXTR
+  csh -f bndextr.HKPATH.D34.job $JULDATE $BDATE 3
+
+  cd $CAMx_HOME/runfiles
+  echo "Processing CAMx: D3 on $JULDATE"
+  csh -f CAMx_v5.40.hkpath.3km.MPI.job $JULDATE $BDATE >& msg/log.D3.$JULDATE
+  if ( $status != 0) then
+      echo "ERROR: Run CAMx_v5.40.hkpath.3km.MPI.job failed"
+      echo "ERROR in CAMx main program"
+      exit 1
+  else
+      echo "Finish D3"
+  endif
+  #cd $BNDEXTR
+  #csh -f bndextr.HKPATH.D34.job $JULDATE $BDATE 4
+
+  #cd $CAMx_HOME/runfiles
+  #echo "Processing CAMx: D4 on $JULDATE"
+  #csh -f CAMx_v5.40.hkpath.1km.MPI.job $JULDATE $BDATE >& msg/log.D4.$JULDATE
+  #if ( $status != 0) then
+  #    echo "ERROR: Run CAMx_v5.40.hkpath.1km.MPI.job failed"
+  #    echo "ERROR in CAMx main program"
+  #    exit 1
+  #  else
+  #    echo "Finish D4"
+  #  endif
+
+set JULDATE = `$CAMx_HOME/datelib/yyyyjjj_plus_dd $JULDATE 1`
+
+end
+
+

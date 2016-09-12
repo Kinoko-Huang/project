@@ -1,0 +1,121 @@
+#!/bin/sh
+
+MYDIR=`/usr/bin/dirname $0`
+cd $MYDIR || exit 1
+MYDIR=`/bin/pwd`
+MYNAME=`/bin/basename $0`
+
+source ./mcip_run.config
+
+ECHO="echo LOG:${MYNAME}:"
+
+if [ $# -eq 2 ]; then
+  MetType=$1
+  INIT_TIME=$2
+else
+  $ECHO "Usage: $0 mm5|wrf initial_time"
+  $ECHO " e.g.: $0 mm5 2009121200"
+  exit 1
+fi
+  
+if [ "$MetType" = "mm5" ]; then
+  MetDataRoot=$DATA_MM5_OUTPUT
+elif [ "$MetType" = "wrf" ]; then
+  MetDataRoot=$DATA_WRF_OUTPUT
+else
+  $ECHO "Invalid met type ${MetType}, must be mm5 or wrf"
+  exit 1
+fi
+
+TmpOutput=outputs
+TmpOutput_fp=`/bin/pwd`/$TmpOutput
+
+DAY1FIXED=${DAY1FIXED:-0}
+if [ $CTM_SKIP_N_DAYS -eq 0 -a $DAY1FIXED -eq 1 ]; then
+  DAY1FIXED_MODE=on
+  $ECHO "DAY1FIXED mode is on"
+else
+  DAY1FIXED_MODE=off
+  $ECHO "DAY1FIXED mode is off"
+fi
+
+if [ "$DAY1FIXED_MODE" == "on" ]; then
+  INIT_TIME2=$(/home/pathsys/bin/date_add ${INIT_TIME:0:8} -1)${INIT_TIME:8:10}
+  MetDataDir=$MetDataRoot/${INIT_TIME2:0:4}/${INIT_TIME2:0:6}/${INIT_TIME2}
+  $ECHO "CTM_SKIP_N_DAYS=$CTM_SKIP_N_DAYS"
+  export CTM_SKIP_N_DAYS=1
+  $ECHO "CTM_SKIP_N_DAYS=$CTM_SKIP_N_DAYS Changed"
+else
+  MetDataDir=$MetDataRoot/${INIT_TIME:0:4}/${INIT_TIME:0:6}/${INIT_TIME}
+  $ECHO "CTM_SKIP_N_DAYS=$CTM_SKIP_N_DAYS"
+fi
+
+$ECHO "$0 is started. INIT_TIME=${INIT_TIME}, MetType=${MetType}"
+$ECHO "MetDataDir=$MetDataRoot"
+
+if [ ! -d $MetDataDir ]; then
+  $ECHO "Input directory $MetDataDir does not exist"   
+  exit 1
+fi
+
+MCIPDataDir=$DATA_MCIP_OUTPUT/${INIT_TIME:0:4}/${INIT_TIME:0:6}/${INIT_TIME}
+
+$ECHO "Input met directory = $MetDataDir"
+
+if [ -d $TmpOutput ]; then
+  /bin/rm -r $TmpOutput
+fi
+
+/bin/mkdir $TmpOutput || {
+  $ECHO "Failed to create $TmpOutput directory"
+  exit 1
+}
+
+if [ "$MetType" = "mm5" ]; then
+  cmd="./run.mcip.PATH MM5 $INIT_TIME $MetDataDir $TmpOutput"
+else
+  if [ "$DAY1FIXED_MODE" == "on" ]; then
+    cmd="./run.mcip.PATH WRF $INIT_TIME2 $MetDataDir $TmpOutput"
+  else
+    cmd="./run.mcip.PATH WRF $INIT_TIME  $MetDataDir $TmpOutput"
+  fi
+fi
+$ECHO $cmd
+$cmd || {
+  $ECHO "Failed to run $cmd"
+  exit 1
+}
+
+if [ "$DAY1FIXED_MODE" == "on" ]; then
+  export CTM_SKIP_N_DAYS=0
+  $ECHO "CTM_SKIP_N_DAYS=$CTM_SKIP_N_DAYS changed"
+fi
+
+if [ "$MetType" = "wrf" ]; then
+  cd wrf_fix || {
+    $ECHO "Failed to change directory to wrf_fix"
+    exit 1
+  }
+  $ECHO ./run.mcip.headerfix $TmpOutput_fp
+  ./run.mcip.headerfix $TmpOutput_fp || {
+    $ECHO "Failed to run ./run.mcip.headerfix $TmpOutput_fp"
+    exit 1
+  }
+  cd ..
+fi
+
+./check_output $INIT_TIME || {
+  $ECHO "Failed to run ./check_output $INIT_TIME"
+  exit 1
+}
+
+./move_output ${INIT_TIME} ${MCIPDataDir} || {
+  $ECHO "Failed to ./move_output ${INIT_TIME} ${MCIPDataDir}"
+  exit 1
+}
+
+echo "Data converted from: ${MetType}"    >  ${MCIPDataDir}/README.txt
+echo "Source directory:    ${MetDataDir}" >> ${MCIPDataDir}/README.txt
+
+$ECHO "$0 is successful, initial time = ${INIT_TIME}"
+exit 0

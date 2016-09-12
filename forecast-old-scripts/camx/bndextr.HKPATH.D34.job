@@ -1,0 +1,103 @@
+#!/bin/csh -f
+#
+#  BNDEXTR can be used to set up 1-way nesting with CAMx
+# 
+#  Reads a coarse grid CAMx average file and:
+#  - extracts concentrations for a user-specified grid nest
+#  - writes a boundary condition file for the grid nest
+#  - optionally writes an initial condition file for the grid nest
+#  - writes diagnostic information on boundary file concentrations
+#
+#  The nested grid is located by iwest,ieast,jsouth,jnorth
+#  which have the same meaning as nest parameters in the
+#  CAMx.in file. They are the coarse grid cell numbers containing
+#  the lower left (iwest,jsouth) and upper right (ieast,jnorth)
+#  corners of the grid nest, excluding buffer cells.  BNDEXTR
+#  adds buffer cells to the grid auromatically.  The meshing
+#  factor is an integer ratio of the nested grid spacing 
+#  relative to the coarse grid spacing.  
+
+set BDATE = $argv[1] #The initial day for this simulation
+set JDATE = $argv[2] #Current simulation day
+set DMAIN = $argv[3]
+
+set CAMxDir = $CAMx_HOME/inputs/icbc
+
+echo $JDATE $BDATE 'BCfile'
+
+if ( $DMAIN == 2 ) then
+
+rm -f msg/camx.9km.*.diag1
+rm -f msg/camx.9km.*.diag2
+rm -f msg/log.bndexr.9.*
+rm -f $CAMxDir/bc.camx.9km.$JDATE.uam
+rm -f $CAMxDir/icon.camx.9km.$BDATE.bin
+
+else if ($DMAIN == 3) then
+
+rm -f msg/camx.3km.*.diag1
+rm -f msg/camx.3km.*.diag2
+rm -f msg/log.bndexr.3.*
+rm -f $CAMxDir/bc.camx.3km.$JDATE.uam
+rm -f $CAMxDir/icon.camx.3km.$BDATE.bin
+
+else if ( $DMAIN == 4 ) then
+
+rm -f msg/camx.1km.*.diag1
+rm -f msg/camx.1km.*.diag2
+rm -f msg/log.bndexr.1.*
+rm -f $CAMxDir/bc.camx.1km.$JDATE.uam
+rm -f $CAMxDir/icon.camx.1km.$BDATE.bin
+
+endif
+
+set ic = "F"
+if ( $JDATE == $BDATE ) then
+  set ic = "T"
+endif
+
+set YYYY = `$CAMx_HOME/datelib/j2g $JDATE | awk '{print $1}'`
+set MM   = `$CAMx_HOME/datelib/j2g $JDATE | awk '{print $2}'`
+set DD   = `$CAMx_HOME/datelib/j2g $JDATE | awk '{print $3}'`
+set dy   = `echo $JDATE |cut -c 3-7`
+
+if ( $DMAIN == 2 ) then
+  set iwest = 71
+  set ieast = 102
+  set jsouth = 35
+  set jnorth = 58
+  set reso = 9
+  set RUN = HKPATH.27
+  ln -fs $CAMxOUT/$RUN/CAMx5.4.$RUN.$YYYY$MM$DD.avrg.grd01 CAMx5.4.$RUN.$YYYY$MM$DD.avrg
+else if ( $DMAIN == 3 ) then
+  set iwest = 27
+  set ieast = 76
+  set jsouth = 25
+  set jnorth = 60
+  set reso = 3
+  set RUN = HKPATH.9
+  ln -fs $CAMxOUT/$RUN/CAMx5.4.$RUN.$YYYY$MM$DD.avrg.grd01 CAMx5.4.$RUN.$YYYY$MM$DD.avrg
+else if ( $DMAIN == 4 ) then
+  set iwest = 64
+  set ieast = 122
+  set jsouth = 18
+  set jnorth = 58
+  set reso = 1
+  set RUN = HKPATH.3
+  ln -fs $CAMxOUT/$RUN/CAMx5.4.$RUN.$YYYY$MM$DD.avrg.grd01 CAMx5.4.$RUN.$YYYY$MM$DD.avrg
+endif
+
+./bndextr.linux << EOF >& ./msg/log.bndexr.${reso}.$JDATE
+input average file |CAMx5.4.$RUN.$YYYY$MM$DD.avrg
+output BC file     |$CAMxDir/bc.camx.${reso}km.$JDATE.uam
+iwst,iest,jsth,jnth|$iwest,$ieast,$jsouth,$jnorth
+mesh factor        |3
+make IC file?      |$ic
+time/date for IC   |${HH}  $dy
+output IC file     |$CAMxDir/icon.camx.${reso}km.${BDATE}.bin
+diagnostic file #1 |msg/camx.${reso}km.$JDATE.diag1
+diagnostic file #2 |msg/camx.${reso}km.$JDATE.diag2
+EOF
+
+
+rm -f CAMx5.4.$RUN.*

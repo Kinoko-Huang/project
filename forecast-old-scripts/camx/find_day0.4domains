@@ -1,0 +1,86 @@
+#!/bin/sh
+#
+# Search CAMx output data for day0 and link the data files to $DATA_CAMX_OUTPUT directory
+#
+if [ $# -eq 1 ]; then
+  INIT_TIME=$1
+else
+  echo "Usage: $0 YYYYMMDDhh"
+  exit 1
+fi
+
+#FC_MODE=1
+
+PATH_SYSDIR=${PATH_SYSDIR-/home/pathsys}
+DATA_CAMX_OUTPUT=${DATA_CAMX_OUTPUT-/home/pathop/data/camx}
+#DATA_CAMX_OUTPUT=${DATA_CAMX_OUTPUT-/home/pathop/hq31/camx_test_data/camx}
+
+Output1_init_time=`/bin/date -d "${INIT_TIME:0:8} ${INIT_TIME:8:2}:00:00 1 day  ago" +%Y%m%d%H`
+Output2_init_time=`/bin/date -d "${INIT_TIME:0:8} ${INIT_TIME:8:2}:00:00 2 days ago" +%Y%m%d%H`
+Output3_init_time=`/bin/date -d "${INIT_TIME:0:8} ${INIT_TIME:8:2}:00:00 3 days ago" +%Y%m%d%H`
+
+echo "find0: Original INIT_TIME = $INIT_TIME"
+if [ $FC_MODE -eq 1 ]; then
+  nday=1
+else
+  nday=0
+fi
+
+INIT_DATE=`$PATH_SYSDIR/bin/ymd_prev ${INIT_TIME:0:8} $nday` || exit 1
+INIT_TIME=${INIT_DATE}${INIT_TIME:8:2}
+echo "find0: New      INIT_TIME = $INIT_TIME"
+
+for Output_init_time in $Output1_init_time $Output2_init_time $Output3_init_time
+do
+  OutputDir=${DATA_CAMX_OUTPUT}/${Output_init_time:0:4}/${Output_init_time:0:6}/${Output_init_time}
+  if [ ! -e $OutputDir ]; then
+    echo "Output directory ${OutputDir} does not exist"
+    continue
+  fi
+  files_1km=`/usr/bin/find $OutputDir/HKPATH.1 -mindepth 1 -maxdepth 1 -type f -name "CAMx5.4.HKPATH.1.${INIT_TIME:0:8}.*" -print`
+  files_3km=`/usr/bin/find $OutputDir/HKPATH.3 -mindepth 1 -maxdepth 1 -type f -name "CAMx5.4.HKPATH.3.${INIT_TIME:0:8}.*" -print`
+  files_9km=`/usr/bin/find $OutputDir/HKPATH.9 -mindepth 1 -maxdepth 1 -type f -name "CAMx5.4.HKPATH.9.${INIT_TIME:0:8}.*" -print`
+  files_27km=`/usr/bin/find $OutputDir/HKPATH.27 -mindepth 1 -maxdepth 1 -type f -name "CAMx5.4.HKPATH.27.${INIT_TIME:0:8}.*" -print`
+  if [ -z "$files_1km" -o -z "$files_3km" -o -z "$files_9km" -o -z "$files_27km" ]; then
+    echo "No valil CAMx5.4.HKPATH...${Output_init_time:0:8}... found in $OutputDir"
+    continue
+  fi
+  for km in HKPATH.1 HKPATH.3 HKPATH.9 HKPATH.27
+  do
+    CAMx_output_dir=outputs/$km
+    #CAMx_output_dir=outputs2/$km
+    if [ ! -d $CAMx_output_dir ]; then
+      /bin/mkdir -p $CAMx_output_dir || {
+        echo "Failed to create $CAMx_output_dir directory"
+        exit 1
+      }
+    fi
+    if [ "$km" = "HKPATH.1" ]; then
+      files=$files_1km
+    elif [ "$km" = "HKPATH.3" ]; then
+      files=$files_3km
+    elif [ "$km" = "HKPATH.9" ]; then
+      files=$files_9km
+    elif [ "$km" = "HKPATH.27" ]; then
+      files=$files_27km
+    else
+      echo "Invalid km = $km"
+      exit 1
+    fi
+    if [ -z "$files" ]; then
+      echo "Init files for $km is empty"
+      exit 1
+    fi
+    for a in $files
+    do
+      echo /bin/ln -sf $a $CAMx_output_dir/
+      /bin/ln -sf $a $CAMx_output_dir/ || {
+        echo "Failed to link file $a to $CAMx_output_dir"
+        exit 1
+      }
+    done
+  done
+  exit 0
+done
+echo "No valid output found for day0 = $INIT_TIME"
+exit 2

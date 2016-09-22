@@ -1,0 +1,55 @@
+#!/bin/sh
+#
+
+if [ $# -ne 3 ]; then
+  echo "Usage: $0 InitTime OutputDir"
+  exit 1
+fi
+
+InitTime=$1
+OutputDir=$2
+MCIP_outputs=$3
+
+if [ -d $OutputDir ]; then
+  echo "Output directory $OutputDir already exists"
+  if [ $CTM_CLEAN_OUTPUT -eq 1 ]; then
+    echo "Remove Output directory"
+    /bin/rm -r -f $OutputDir
+  else
+    echo "Keep Output directory"
+  fi
+fi
+
+if [ ! -d $OutputDir ]; then
+  /bin/mkdir -p $OutputDir || {
+    echo "Failed to create output directory $OutputDir"
+    exit 1
+  }
+fi
+
+DOMAINS_RES=`ls $MCIP_outputs`
+for MCIP_RES in ${DOMAINS_RES}
+do
+  [ -f outputs/$MCIP_RES/GRIDDESC ] || {
+    echo "outputs/$MCIP_RES/GRIDDESC does not exist"
+    exit 1
+  }
+done
+
+for MCIP_RES in ${DOMAINS_RES}
+do
+  if [ ! -d $OutputDir/${MCIP_RES}km ]; then
+    /bin/mkdir $OutputDir/${MCIP_RES}km || {
+      echo "Failed to create output subdirectory $OutputDir/${MCIP_RES}km"
+      exit 1
+    }
+  fi
+  /usr/bin/rsync -av outputs/$MCIP_RES/ $OutputDir/${MCIP_RES}km/ || {
+    echo "Failed to run /usr/bin/rsync -av outputs/$MCIP_RES/ $OutputDir/${MCIP_RES}km/"
+    exit 1
+  }
+done
+
+echo "MCIP Output data saved to $OutputDir"
+
+exit 0

@@ -31,7 +31,7 @@ while ( $CUR_JDATE <= $END_JDATE )
   set CUR_YY = `echo ${CUR_Y} | cut -c 3-4`
   set CUR_GDATE = ${CUR_Y}${CUR_M}${CUR_D}
 
-#  set TOM_JDATE = `./yyyyjjj_plus_dd $CUR_JDATE 1`
+##  set TOM_JDATE = `./yyyyjjj_plus_dd $CUR_JDATE 1`
   set TOM_JDATE = `$PATH_SYSDIR/bin/ymd_nextset $CUR_JDATE 1`
   set TOM_Y = `$PATH_SYSDIR/bin/j2g $TOM_JDATE | awk '{print $1}'`
   set TOM_M   = `$PATH_SYSDIR/bin/j2g $TOM_JDATE | awk '{print $2}'`
@@ -96,7 +96,7 @@ WRF filename       |wrfout_d0${DOMAINS_GRID}_${TOM_Y}-${TOM_M}-${TOM_D}_11:00:00
 WRF filename       |wrfout_d0${DOMAINS_GRID}_${TOM_Y}-${TOM_M}-${TOM_D}_12:00:00
 EOF
 
-#set CUR_JDATE = `./yyyyjjj_plus_dd $CUR_JDATE 1`
+##set CUR_JDATE = `./yyyyjjj_plus_dd $CUR_JDATE 1`
 set CUR_JDATE = `$PATH_SYSDIR/bin/ymd_next $CUR_JDATE 1`
 
 ########End the Loop of time   ################

@@ -1,0 +1,59 @@
+#!/bin/sh 
+
+if [ $# -eq 2 ]; then
+  INIT_TIME=$1
+  OUTPUT_DIR=$2
+else
+  echo "Usage: Initial_time output_directory"
+  echo " e.g.: 2007010300 /home/pathop/data/camx"
+  exit 1
+fi
+
+MYDIR=`/usr/bin/dirname $0`
+cd $MYDIR || exit 1
+MYDIR=`/bin/pwd`
+
+if [ ${#INIT_TIME} -ne 10 ]; then
+  echo "Invalid Initial_time $INIT_TIME, must be in YYYYMMDDhh format"
+  exit 1
+fi
+
+if [ ! -e $OUTPUT_DIR ]; then
+  echo "Output directory $OUTPUT_DIR does not exist"
+  exit 1
+fi
+
+FromDir=$MYDIR/outputs
+ToDir=$OUTPUT_DIR/${INIT_TIME:0:4}/${INIT_TIME:0:6}/${INIT_TIME}
+
+if [ $CTM_SAVE_OUTPUT -eq 0 ]; then
+  echo "Data in $FromDir is not saved to $ToDir"
+  exit 0
+fi
+
+if [ $CTM_CLEAN_OUTPUT -eq 1 -a -e $ToDir ]; then
+  echo "To directory $ToDir exists, remove it"
+  /bin/rm -r -f $ToDir
+fi
+
+/bin/mkdir -p $ToDir || {
+  echo "Failed to create output directory $ToDir"
+  exit 1
+}
+
+echo "Clean up symbolic links under $FromDir"
+Prefix=CAMx5.4
+/usr/bin/find $FromDir -type l -name ${Prefix}\* -exec /bin/rm -v {} \;
+
+/usr/bin/rsync -av $FromDir/ $ToDir/ || {
+  echo "Failed to run /usr/bin/rsync -av $FromDir/ $ToDir/"
+  exit 1
+}
+
+# Create day1fixed file
+if [ $DAY1FIXED -eq 1 ]; then
+  /bin/touch $ToDir/.day1fixed || exit 1
+  echo $ToDir/.day1fixed created
+fi
+
+exit 0

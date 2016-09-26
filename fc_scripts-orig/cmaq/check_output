@@ -1,0 +1,70 @@
+#!/bin/sh
+
+MYROOT=`/usr/bin/dirname $0`
+MYNAME=`/bin/basename $0`
+
+cd $MYROOT || exit 1
+MYDIR=`/bin/pwd`
+
+if [ $# -eq 1 ]; then
+  INIT_TIME=$1
+else 
+  echo "Usage: $0 YYYYMMDDhh"
+  exit 1
+fi
+
+INIT_TIME=$1
+if [ ${#INIT_TIME} -ne 10 ]; then
+  echo "Invalid initial time ${INIT_TIME}"
+  echo "Usage: $0 YYYYMMDDhh"
+  exit 1
+fi
+
+D=`/bin/date -d "${INIT_TIME:0:8} ${INIT_TIME:8:2}:00:00" +%Y%m%d%H 2>/dev/null`
+if [ "$INIT_TIME" != "$D" ]; then
+  echo "Invalid initial time ${INIT_TIME}"
+  echo "Usage: $0 YYYYMMDDhh"
+  exit 1
+fi
+
+#CTM_SKIP_N_DAYS=0
+#CTM_SIM_N_DAYS=1
+
+INIT_TIME=`/bin/date -d "${INIT_TIME:0:8} ${INIT_TIME:8:2}:00:00 $CTM_SKIP_N_DAYS days" +%Y%m%d%H`
+let "ndays = $CTM_SIM_N_DAYS - 1"
+END_TIME=`/bin/date -d "${INIT_TIME:0:8} ${INIT_TIME:8:2}:00:00 $ndays days" +%Y%m%d%H`
+
+DataPath=outputs/run.OP_mm5_cb05cl
+Prefix=CCTM_V5g_ebi_cb05cl_ae5_aq_mpich2
+
+/usr/bin/find $DataPath -type l -exec /bin/rm -v {} \;
+
+for dom in 3km 9km 27km
+do
+  for datatype in ACONC AEROVIS CGRID CONC DRYDEP WETDEP1
+  do
+    Size=
+    dt=$INIT_TIME
+    while [ "$dt" -le "$END_TIME" ]
+    do
+      yj=`/bin/date -d "${dt:0:8}" +%Y%j`
+      OutFile="${DataPath}/${dom}/${Prefix}.${datatype}.${yj}"
+      if [ -s $OutFile ]; then
+        fsize=`/usr/bin/stat -c "%s" $OutFile`
+        if [ -z ${Size} ]; then
+          Size=$fsize
+        fi
+        if [ $fsize != ${Size} ]; then
+          echo "Invalid CMAQ output file $OutFile, size = $fsize"
+          exit 1
+        fi
+      else
+        echo $OutFile not exist
+        exit 1
+      fi
+      dt=`/bin/date -d "${dt:0:8} ${dt:8:2}:00:00 1 day" +%Y%m%d%H`
+    done
+  done
+done  
+
+exit 0

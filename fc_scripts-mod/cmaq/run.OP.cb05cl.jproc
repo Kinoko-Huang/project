@@ -1,0 +1,134 @@
+#! /bin/csh -f
+
+# script to run the jvalue processor (jproc)
+
+# RCS file, release, date & time of last delta, author, state, [and locker]
+# $Header: /project/work/rep/JPROC/src/sunOS5/mjproc.q,v 1.1 1998/02/18 16:55:19 yoj Exp $ 
+
+# what(1) key, module and SID; SCCS file; date and time of last delta:
+# @(#)jproc.q	1.3 /project/mod3/JPROC/doc/bldrun/sunOS5/SCCS/s.jproc.q 17 Jun 1997 10:20:05
+
+# method: run.jproc >&! jproc.log &
+
+### setenv M3DATA /project/air4/yoj/rel/data
+ 
+# if ( ! -e $M3DATA ) then
+#    echo "   $M3DATA path does not exist"
+#    exit 1
+#    endif
+# echo " "; echo " Input data path, M3DATA set to $M3DATA"; echo " "
+
+ set APPL  = V5g_cb05cl_ae5_aq
+ set CFG   = $APPL
+ set EXEC  = JPROC_$CFG
+
+#set BASE  = /tmp/you/your_directory
+ set BASE  = $cwd
+
+ #cd $BASE; date; set timestamp; cat $BASE/cfg.${CFG}; echo " "; set echo
+ echo "Warning: $BASE/cfg.${CFG} does not exist"
+ cd $BASE; date; set timestamp; echo " "; set echo
+
+# the parameters for this run - produces one file per day
+
+ set BEG_JDATE   = $argv[1]  #dec 17   # the beginning day for this run
+ set END_JDATE   = $argv[2]            # the ending day
+
+# input files and directories
+
+ set CSQYpath   = ./raw/phot  # CSQY input data
+ set PROFpath   = ./raw/phot  # PROF input data
+ set ETpath     = ./raw/phot  # ET input data
+ set TOMSpath   = ./raw/phot  # TOMS input data
+
+ set ETfile    = ETirradiance.dat
+ set PROFfile  = PROFILES.dat
+ set O2ABSfile = O2_NASA94
+ set O3ABSfile = O3O1D_NASA94
+#set TOMSfile  = ga880802.n7t
+#set TOMSfile  = ga880727.n7t
+#set TOMSfile  = not_available
+
+# output file and directory
+ set OUTDIR   = `echo $BEG_JDATE | cut -c1-4`
+ if ( ! -d "$OUTDIR" ) mkdir -p $OUTDIR
+
+#  setenv for input files
+
+ setenv ET        $ETpath/$ETfile
+ setenv PROFILES  $PROFpath/$PROFfile
+# setenv TOMS      $TOMSpath/$TOMSfile
+ setenv O2ABS     $CSQYpath/$O2ABSfile
+ setenv O3ABS     $CSQYpath/$O3ABSfile
+ setenv CSQY      $CSQYpath
+
+# check ET input file
+
+ if (! ( -e $ET ) ) then
+    echo " $ET not found "
+    exit
+    endif
+
+# check profile input file
+
+ if (! ( -e $PROFILES ) ) then
+    echo " $PROFILES not found "
+    exit
+    endif
+
+# check TOMS input file
+
+# setenv JPROC_TOMSEXIST  N  # Assume TOMS data file does not exist for this run
+# if ( -e $TOMS ) then
+#    setenv JPROC_TOMSEXIST  Y
+#    endif
+
+# check O2 absorption input file
+
+ if (! ( -e $O2ABS ) ) then
+    echo " $O2ABS not found "
+    exit
+    endif
+
+# check O3 absorption input file
+
+ if (! ( -e $O3ABS ) ) then
+    echo " $O3ABS not found "
+    exit
+    endif
+
+ env
+
+#debugger $BASE/$EXEC; exit()
+
+ ls -l $BASE/$EXEC
+#timex $BASE/$EXEC
+
+ unalias rm
+ set CUR_JDATE = $BEG_JDATE
+ while ( $CUR_JDATE <= $END_JDATE )
+
+    setenv CUR_GDATE `$PATH_SYSDIR/bin/yj2ymd ${CUR_JDATE}`
+
+    setenv JPROC_TOMSEXIST  N
+    setenv TOMS ./toms/L3_ozone_epc_${CUR_GDATE}.txt
+
+    if ( -e $TOMS ) then
+      echo Processing TOMS file $TOMS
+    else
+      echo Unable to access TOMS file $TOMS
+      #exit
+    endif
+
+    setenv JPROC_STDATE $CUR_JDATE
+    echo "   Running for $CUR_JDATE ..."
+    set JVfile = JTABLE_cb05cl_${CUR_JDATE}
+    setenv JVALUES $OUTDIR/$JVfile
+#   remove existing output file
+    if ( -e $JVALUES ) rm $JVALUES
+#   setenv for output file
+    $BASE/$EXEC
+    set CUR_JDATE = `$PATH_SYSDIR/bin/yj_next $CUR_JDATE 1`
+    end
+
+# exit() 

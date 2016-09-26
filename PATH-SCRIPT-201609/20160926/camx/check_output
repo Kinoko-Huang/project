@@ -1,0 +1,76 @@
+#!/bin/sh
+
+#CTM_SIM_N_DAYS=3
+#CTM_SKIP_N_DAYS=1
+
+MYROOT=`/usr/bin/dirname $0`
+MYNAME=`/bin/basename $0`
+
+cd $MYROOT || exit 1
+MYDIR=`/bin/pwd`
+
+if [ $# -eq 1 ]; then
+  INIT_TIME=$1
+else 
+  echo "Usage: $0 YYYYMMDDhh"
+  exit 1
+fi
+
+INIT_TIME=$1
+if [ ${#INIT_TIME} -ne 10 ]; then
+  echo "Invalid initial time ${INIT_TIME}"
+  echo "Usage: $0 YYYYMMDDhh"
+  exit 1
+fi
+
+D=`/bin/date -d "${INIT_TIME:0:8} ${INIT_TIME:8:2}:00:00" +%Y%m%d%H 2>/dev/null`
+if [ "$INIT_TIME" != "$D" ]; then
+  echo "Invalid initial time ${INIT_TIME}"
+  echo "Usage: $0 YYYYMMDDhh"
+  exit 1
+fi
+
+INIT_TIME=`/bin/date -d "${INIT_TIME:0:8} ${INIT_TIME:8:2}:00:00 $CTM_SKIP_N_DAYS days" +%Y%m%d%H`
+let "ndays = $CTM_SIM_N_DAYS - 1"
+END_TIME=`/bin/date -d "${INIT_TIME:0:8} ${INIT_TIME:8:2}:00:00 $ndays days" +%Y%m%d%H`
+
+echo check_ouput: INIT_TIME=$INIT_TIME
+echo check_ouput: END_TIME=$END_TIME
+
+DataPath=outputs
+Prefix=CAMx5.4
+
+#/usr/bin/find $DataPath -type l -name ${Prefix}\* -exec /bin/rm -v {} \;
+
+DOMAINS_RES=`ls $DataPath`
+for CAMX_RES in $DOMAINS_RES
+do
+  Datatypes="avrg.grd01 depn.grd01 mass"
+  for datatype in $Datatypes
+  do
+    Size=
+    CUR_TIME=$INIT_TIME
+    while [ "$CUR_TIME" -le "$END_TIME" ]
+    do
+      OutFile="${DataPath}/${CAMX_RES}/${Prefix}.${CAMX_RES}.${CUR_TIME:0:8}.${datatype}"
+      if [ -s $OutFile ]; then
+        fsize=`/usr/bin/stat -c "%s" $OutFile`
+        #echo $OutFile $fsize $Size
+        if [ -z ${Size} ]; then
+          Size=$fsize
+        fi
+        if [ $fsize != ${Size} ]; then
+          echo "Invalid CAMx output file $OutFile, size = $fsize"
+          exit 1
+        fi
+      else
+        echo $OutFile not exist
+        exit 1
+      fi
+      #echo $OutFile
+      CUR_TIME=`/bin/date -d "${CUR_TIME:0:8} ${CUR_TIME:8:2}:00:00 1 day" +%Y%m%d%H`
+    done #while
+  done #for datatype
+done  #for CAMX_RES
+
+exit 0

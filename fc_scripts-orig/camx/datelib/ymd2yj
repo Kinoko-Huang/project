@@ -1,0 +1,11 @@
+#!/bin/sh
+
+if [ $# -ne 1 ]; then
+  /bin/echo "Usage: $0 YYYYMMDD"
+  /bin/echo " e.g.: $0 20021008"
+  exit 1
+fi
+
+YMD=$1
+
+/bin/date -d "${YMD}" +%Y%j

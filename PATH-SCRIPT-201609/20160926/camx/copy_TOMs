@@ -1,0 +1,29 @@
+#!/bin/sh
+
+if [ $# -eq 1 ]; then
+  CUR_GDATE=$1
+else
+  echo "Usage: $0 YYYYMMDD"
+  exit 1
+fi
+
+if [ ${#CUR_GDATE} -ne 8 ]; then
+  echo "Invalid date: $CUR_GDATE"
+  exit 1
+fi
+
+#PATH_SYSDIR=/home/pathsys
+
+AveTOMsDir=$PATH_SYSDIR/static_data/CAMx/aveTOMs
+
+FromFile=$AveTOMsDir/L3_ozavg_omi_2006${CUR_GDATE:4:2}.txt
+ToFile=Raw_DATA/TOMs/L3_ozone_omi_${CUR_GDATE}.txt
+
+if [ ! -e $FromFile ]; then
+  echo "Average TOMs file $FromFile does not exist!"
+  exit 1
+fi
+
+echo /bin/cp $FromFile $ToFile
+/bin/cp $FromFile $ToFile || exit 1
+exit 0

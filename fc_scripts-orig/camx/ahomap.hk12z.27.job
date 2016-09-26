@@ -1,0 +1,96 @@
+#!/bin/csh -f 
+#
+# User input data definition
+#
+# Lines 1 & 2: Coordiniate projection and master/coarse grid location definition
+# Coordinate project |UTM
+# xorg,yorg,izone    |-316.,2808.,15                (km,km,unitless)
+# or
+# Coordinate project |LAMBERT
+# xorg,yrog,clon,clat|-2000,-1700,-100,40,60,30     (km,km,deg,deg,deg,deg)
+# true1,true2
+# or
+# Coordinate project |LATLON
+# xorg,yorg          |30,-120                       (deg,deg)
+# or 
+# Coordinate project |POLAR
+# xorg,yorg,plon,plat|-100,-200,-100,40             (km,km,deg,deg)
+#
+# Line 3: Master/coarse grid cell size (km)
+# dx,dy              |16,16
+#
+# Line 4: Output file name
+# Output filename    |ahomap.test
+#
+# Line 5: Snow flag (T=5th albedo bin set for snow, F=no snow albedo included)
+# Process for snow?  |.true.
+#
+# Line 6: Number of grids to process
+# Number of grids    |1
+#
+# Lines 7 and 8: Landuse filename and domain size (number of grid cells)
+#                List the master/coarse grid first, then any/all fine grids
+# Landuse file       |camx.landuse
+# nx, ny             |95,83
+#
+# Line 9: Number of TOMS input data files
+# Number of TOMS file|28
+#
+# Lines 10+: Begin date, End date,and the Ozone data file name.
+#            Requires begin date (YYMMDD) and end date (YYMMDD) for ozone 
+#            column data.
+#
+# Example: for August 15, 1993 daily ozone data, 
+# Bday,Eday,TOMS file|930815,930815,ozcol_data/ga930815.m3t
+#
+# Example: for August 1993 monthly ozone data,
+# Bday,Eday,TOMS file|930801,930831,ozcol_data/m3_aug93.mon
+#
+set BDATE = $argv[1]
+set EDATE = $argv[2]
+set JDATE  = $BDATE
+
+rm -f ../msg/log.ahomap.*.27km
+
+while ( $JDATE <= $EDATE )
+
+set YYYY   = `$CAMx_HOME/datelib/j2g $JDATE | awk '{print $1}'`
+set MM     = `$CAMx_HOME/datelib/j2g $JDATE | awk '{print $2}'`
+set DD     = `$CAMx_HOME/datelib/j2g $JDATE | awk '{print $3}'`
+set YY     = `echo $YYYY | cut -c 3-4`
+
+set YYYYMMDD = $YYYY$MM$DD
+set YYMMDD = $YY$MM$DD
+
+set YYYYMMDD1 = `$CAMx_HOME/datelib/ymd_next $YYYYMMDD`
+set YYMMDD1 = `echo $YYYYMMDD1 | cut -c 3-8`
+
+ln -sf $CAMx_HOME/inputs/met/27/camx_lu.$YYYYMMDD.27km.bin camx_lu.$YYYYMMDD.27km.bin
+ln -sf $CAMx_HOME/Raw_DATA/TOMs/L3_ozone_omi_$YYYYMMDD.txt L3_ozone_omi_$YYYYMMDD.txt
+ln -sf $CAMx_HOME/Raw_DATA/TOMs/L3_ozone_omi_${YYYYMMDD1}.txt L3_ozone_omi_${YYYYMMDD1}.txt
+
+
+$cwd/../src/ahomap.linux << EOF >& ../msg/log.ahomap.$JDATE.27km
+Coordinate project |LAMBERT
+xorg,yorg,izone    |-2403.,-1876.5,114,28.5,15,40
+dx,dy              |27.,27.
+Output filename    |ahomap.hk.${YYYYMMDD}.27km
+Process for snow?  |.false.
+Number of grids    |1
+Landuse filename   |camx_lu.$YYYYMMDD.27km.bin
+nx,ny              |182,138
+Numbr of TOMS files|2
+Bday,Eday,TOMS file|$YYMMDD,$YYMMDD,L3_ozone_omi_$YYYYMMDD.txt
+Bday,Eday,TOMS file|$YYMMDD1,$YYMMDD1,L3_ozone_omi_$YYYYMMDD1.txt
+EOF
+
+rm -f camx_lu.$YYYYMMDD.27km.bin
+rm -f L3_ozone_omi_$YYYYMMDD.txt
+rm -f L3_ozone_omi_$YYYYMMDD1.txt
+
+
+mv ahomap.hk.${YYYYMMDD}.27km $CAMx_HOME/inputs/ahomap
+
+set JDATE = `$CAMx_HOME/datelib/yyyyjjj_plus_dd $JDATE 1`
+
+end

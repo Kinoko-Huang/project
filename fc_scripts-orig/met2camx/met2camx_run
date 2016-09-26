@@ -1,0 +1,155 @@
+#!/bin/sh
+#
+MYDIR=`/usr/bin/dirname $0`
+cd $MYDIR || exit 1
+MYDIR=`/bin/pwd`
+MYNAME=`/bin/basename $0`
+
+source ./met2camx_run.config
+
+ECHO="echo LOG:${MYNAME}:"
+
+if [ $# -eq 2 ]; then
+  YMDh=$1
+  MetData=$2
+else
+  $ECHO "Usage: Init_time Met_data"
+  $ECHO " e.g.: 2004090600 mm5"
+  exit 1
+fi
+
+if [ "$MetData" = "mm5" ]; then
+  $ECHO "MetData == mm5 is not supported"
+  exit 1
+  WorkDir=$MYDIR/work_mm5
+  LinkProg=./link.mm5file
+  Met2Camx=./mm5camx.hk.path.csh
+  Prefix=mm5out
+  export MM5TCAMx=$MYDIR
+elif [ "$MetData" = "wrf" ]; then
+  WorkDir=$MYDIR/work_wrf
+  LinkProg=./link.wrffile
+  Met2Camx=./wrfcamx.hk.path.csh
+  Prefix=wrfout
+  export WRFTCAMx=$MYDIR
+else
+  $ECHO "Invalid Met_data name ${MetData}, must be mm5 or wrf"
+  exit 1
+fi 
+
+if [ $DAY1FIXED -eq 1 ]; then
+  MET=${DATA_MET_INPUT}.day1fixed
+else
+  MET=${DATA_MET_INPUT}
+fi
+OUTPUT=$DATA_M2CX_OUTPUT
+
+echo "MET=$MET OUTPUT=$OUTPUT"
+
+if [ ${#YMDh} -ne 10 ]; then
+  $ECHO "Invalid initial datetime $YMDh, must be in YYYYMMDDhh format"
+  exit 1
+fi
+
+tt=`/bin/date -d "${YMDh:0:8} ${YMDh:8:2}:00:00" +%Y%m%d%H 2>/dev/null` || {
+  $ECHO "Invalid initial datetime $YMDh"
+  exit 1
+}
+
+if [ "$tt" != "$YMDh" ]; then
+  $ECHO "Invalid initial datetime $YMDh"
+  exit 1
+fi
+
+InitHr=${YMDh:8:2}
+if [ "$InitHr" != "00" -a "$InitHr" != "12" ]; then
+  $ECHO "Invalid initial datetime $YMDh, initial hour must be 00 or 12"
+  exit 1
+fi
+ 
+MetData="$MET/${YMDh:0:4}/${YMDh:0:6}/${YMDh}"
+if [ ! -e $MetData ]; then
+  $ECHO "No input Met data in $MetData"
+  exit 1
+fi
+
+if [ -d Output ]; then
+  /bin/rm -r Output
+fi
+
+cd $WorkDir || {
+  $ECHO "Failed to change directory to $WorkDir"
+  exit 1
+}
+
+# CTM initial date
+YMD1=`/bin/date -d "${YMDh:0:8} $CTM_SKIP_N_DAYS days" +%Y%m%d`
+# CTM ending  date
+YMD2=`/bin/date -d "${YMD1:0:8} $CTM_SIM_N_DAYS days"  +%Y%m%d`
+# CTM ending  date - 1
+YMD2_1d=`/bin/date -d "${YMD2:0:8} 1 day ago"  +%Y%m%d`
+
+$ECHO YMD1=$YMD1 YMD2=$YMD2
+
+YJ1=`./g2j ${YMD1:0:4} ${YMD1:4:2} ${YMD1:6:2}` || {
+  $ECHO $YJ1
+  exit 1
+}
+YJ2=`./g2j ${YMD2:0:4} ${YMD2:4:2} ${YMD2:6:2}` || {
+  $ECHO $YJ2
+  exit 1
+}
+YJ2_1d=`./g2j ${YMD2_1d:0:4} ${YMD2_1d:4:2} ${YMD2_1d:6:2}` || {
+  $ECHO $YJ2_1d
+  exit 1
+}
+
+$ECHO YJ1=$YJ1 YJ2=$YJ2 YJ2_1d=$YJ2_1d
+
+/usr/bin/find . -type l -name "${Prefix}_d0*" -exec /bin/rm -f {} \;
+
+$ECHO $LinkProg $YJ1 $YJ2 $InitHr $MET
+$LinkProg $YJ1 $YJ2 $InitHr $MET || {
+  $ECHO "Failed to run $LinkProg $YJ1 $YJ2 $MET in $WorkDir"
+  exit 1
+}
+
+Met2Camx=${Met2Camx}-${InitHr}
+$ECHO $Met2Camx $YJ1 $YJ2_1d
+$Met2Camx $YJ1 $YJ2_1d || {
+  $ECHO "Failed to run $Met2Camx $YJ1 $YJ2_1d"
+  exit 1
+}
+
+cd $MYDIR || exit 1
+./check_output ${YMD1} ${YMD2} || {
+  $ECHO "Failed to run ./check_output ${YMD1} ${YMD2}"
+  exit 1
+} 
+
+OUTPUTData=$OUTPUT/${YMDh:0:4}/${YMDh:0:6}/${YMDh}
+if [ -d $OUTPUTData ]; then
+  $ECHO "Output data directory $OUTPUTData already exists"
+  if [ $CTM_CLEAN_OUTPUT -eq 1 ]; then
+    $ECHO "Remove $OUTPUTData"
+    /bin/rm -f -r $OUTPUTData
+  else
+    $ECHO "Keep $OUTPUTData"
+  fi
+fi
+
+if [ ! -d $OUTPUTData ]; then
+  /bin/mkdir -p $OUTPUTData || {
+    $ECHO "Failed to create output directory $OUTPUTData"
+    exit 1
+  }
+fi
+
+/usr/bin/rsync -av $MYDIR/Output/ $OUTPUTData/ || {
+  $ECHO "Failed to save data to $OUTPUTData"
+  exit 1
+}
+
+$ECHO "Output saved to $OUTPUTData"
+
+exit 0

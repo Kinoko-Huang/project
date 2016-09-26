@@ -1,0 +1,119 @@
+#!/bin/csh -f
+
+source ../../domains_def.config
+
+#set WRFTCAMx = $cwd/..
+set WRFTCAMx = /home/pathsys/Met2CAMx-3.4
+
+if ( $#argv != 2 ) then
+  echo "Usage: $0 BeginDate EndDate"
+  exit 1
+endif 
+
+set BEG_JDATE = $argv[1]
+set END_JDATE = $argv[2]
+
+echo '-------Get the parameter value for different Domain---------'
+set DOMAINS_GRID = 1
+foreach DOMAINS_RES ( $G_DOMAINS_RES_MET2CAMX )
+
+set NCOLS = ${NCOLS_AQMS_Dx[$DOMAINS_GRID]}
+set NROWS = ${NROWS_AQMS_Dx[$DOMAINS_GRID]}
+set XOR = ${XCRO_AQMS_Dx[$DOMAINS_GRID]}
+set YOR = ${YCRO_AQMS_Dx[$DOMAINS_GRID]}
+ 
+set CUR_JDATE = $BEG_JDATE
+while ( $CUR_JDATE <= $END_JDATE )
+
+  set CUR_Y = `$PATH_SYSDIR/bin/j2g $CUR_JDATE | awk '{print $1}'`
+  set CUR_M = `$PATH_SYSDIR/bin/j2g $CUR_JDATE | awk '{print $2}'`
+  set CUR_D = `$PATH_SYSDIR/bin/j2g $CUR_JDATE | awk '{print $3}'`
+  set CUR_YY = `echo ${CUR_Y} | cut -c 3-4`
+  set CUR_GDATE = ${CUR_Y}${CUR_M}${CUR_D}
+
+##  set TOM_JDATE = `./yyyyjjj_plus_dd $CUR_JDATE 1`
+  set TOM_JDATE = `$PATH_SYSDIR/bin/yj_next $CUR_JDATE 1`
+  set TOM_Y = `$PATH_SYSDIR/bin/j2g $TOM_JDATE | awk '{print $1}'`
+  set TOM_M   = `$PATH_SYSDIR/bin/j2g $TOM_JDATE | awk '{print $2}'`
+  set TOM_D   = `$PATH_SYSDIR/bin/j2g $TOM_JDATE | awk '{print $3}'`
+  set TOM_YY   = `echo ${TOM_Y} | cut -c 3-4`
+######Specify the output of WRFCAMx################
+
+  set CAMxMET = ../Output/${DOMAINS_RES}
+  if ( ! -e $CAMxMET ) mkdir -p $CAMxMET
+######Delete previous output and running message####
+  #rm -f $WRFTCAMx/msg/wrfcamx.hkpath.d0${DOMAINS_GRID}.${CUR_JDATE}.out
+
+set MyExec   = $WRFTCAMx/src_wrf-${SrcVer}/wrfcamx.linux
+echo "MyExec = $MyExec"
+
+${MyExec} << EOF
+KV Method          |OB70
+Minimum Kv         |1.
+Project            |LCP
+Process snow cover |.false.
+Zhang 26 LU cats   |.false.
+Subgrd cloud Method|NONE
+Start/end date     |${CUR_YY}${CUR_M}${CUR_D}12 ${TOM_YY}${TOM_M}${TOM_D}12
+WRF output freq    |60.
+Grid time zone     |0
+CAMx grid size     |$NCOLS, $NROWS, 26
+CAMx Grid spacing  |$DOMAINS_RES, $DOMAINS_RES
+CAMx orig & params |$XOR, $YOR, 114., 28.5, 15., 40.
+Layer mapping      |1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,22,24,27,31,35,38
+CAMx LU file       |$CAMxMET/camx_lu.$CUR_GDATE.${DOMAINS_RES}km.bin
+CAMx Z-P file      |$CAMxMET/camx_zp.$CUR_GDATE.${DOMAINS_RES}km.bin
+CAMx Wind file     |$CAMxMET/camx_uv.$CUR_GDATE.${DOMAINS_RES}km.bin
+CAMx Temp file     |$CAMxMET/camx_tp.$CUR_GDATE.${DOMAINS_RES}km.bin
+CAMx Kv file       |$CAMxMET/camx_kv_ob70.$CUR_GDATE.${DOMAINS_RES}km.bin
+CAMx Water file    |$CAMxMET/camx_qa.$CUR_GDATE.${DOMAINS_RES}km.bin
+CAMx Cld/rain file |$CAMxMET/camx_cr.$CUR_GDATE.${DOMAINS_RES}km.bin
+CAMx/AHO snow cover|$CAMxMET/camx_sc.$CUR_GDATE.${DOMAINS_RES}km.txt
+WRF filename       |wrfout_d0${DOMAINS_GRID}_${CUR_Y}-${CUR_M}-${CUR_D}_12:00:00
+WRF filename       |wrfout_d0${DOMAINS_GRID}_${CUR_Y}-${CUR_M}-${CUR_D}_13:00:00
+WRF filename       |wrfout_d0${DOMAINS_GRID}_${CUR_Y}-${CUR_M}-${CUR_D}_14:00:00
+WRF filename       |wrfout_d0${DOMAINS_GRID}_${CUR_Y}-${CUR_M}-${CUR_D}_15:00:00
+WRF filename       |wrfout_d0${DOMAINS_GRID}_${CUR_Y}-${CUR_M}-${CUR_D}_16:00:00
+WRF filename       |wrfout_d0${DOMAINS_GRID}_${CUR_Y}-${CUR_M}-${CUR_D}_17:00:00
+WRF filename       |wrfout_d0${DOMAINS_GRID}_${CUR_Y}-${CUR_M}-${CUR_D}_18:00:00
+WRF filename       |wrfout_d0${DOMAINS_GRID}_${CUR_Y}-${CUR_M}-${CUR_D}_19:00:00
+WRF filename       |wrfout_d0${DOMAINS_GRID}_${CUR_Y}-${CUR_M}-${CUR_D}_20:00:00
+WRF filename       |wrfout_d0${DOMAINS_GRID}_${CUR_Y}-${CUR_M}-${CUR_D}_21:00:00
+WRF filename       |wrfout_d0${DOMAINS_GRID}_${CUR_Y}-${CUR_M}-${CUR_D}_22:00:00
+WRF filename       |wrfout_d0${DOMAINS_GRID}_${CUR_Y}-${CUR_M}-${CUR_D}_23:00:00
+WRF filename       |wrfout_d0${DOMAINS_GRID}_${TOM_Y}-${TOM_M}-${TOM_D}_00:00:00
+WRF filename       |wrfout_d0${DOMAINS_GRID}_${TOM_Y}-${TOM_M}-${TOM_D}_01:00:00
+WRF filename       |wrfout_d0${DOMAINS_GRID}_${TOM_Y}-${TOM_M}-${TOM_D}_02:00:00
+WRF filename       |wrfout_d0${DOMAINS_GRID}_${TOM_Y}-${TOM_M}-${TOM_D}_03:00:00
+WRF filename       |wrfout_d0${DOMAINS_GRID}_${TOM_Y}-${TOM_M}-${TOM_D}_04:00:00
+WRF filename       |wrfout_d0${DOMAINS_GRID}_${TOM_Y}-${TOM_M}-${TOM_D}_05:00:00
+WRF filename       |wrfout_d0${DOMAINS_GRID}_${TOM_Y}-${TOM_M}-${TOM_D}_06:00:00
+WRF filename       |wrfout_d0${DOMAINS_GRID}_${TOM_Y}-${TOM_M}-${TOM_D}_07:00:00
+WRF filename       |wrfout_d0${DOMAINS_GRID}_${TOM_Y}-${TOM_M}-${TOM_D}_08:00:00
+WRF filename       |wrfout_d0${DOMAINS_GRID}_${TOM_Y}-${TOM_M}-${TOM_D}_09:00:00
+WRF filename       |wrfout_d0${DOMAINS_GRID}_${TOM_Y}-${TOM_M}-${TOM_D}_10:00:00
+WRF filename       |wrfout_d0${DOMAINS_GRID}_${TOM_Y}-${TOM_M}-${TOM_D}_11:00:00
+WRF filename       |wrfout_d0${DOMAINS_GRID}_${TOM_Y}-${TOM_M}-${TOM_D}_12:00:00
+EOF
+
+echo "Run finished met2camx_d0${DOMAINS_GRID}_$CUR_JDATE"
+
+set met2camx_check = `grep -B2 "met2camx_d0${DOMAINS_GRID}_$CUR_JDATE" ../../log/met2camx.log | cut -d ' ' -f 6`
+echo "$met2camx_check"
+if ( $met2camx_check != "FINISHED" ) then
+  echo "Error runing wrfcamx.hk.path.csh-12 d0${DOMAINS_GRID} $CUR_JDATE"
+  exit 1
+endif
+
+echo "Successfully finished MET2CAMX d0${DOMAINS_GRID} $CUR_JDATE"
+
+##set CUR_JDATE = `./yyyyjjj_plus_dd $CUR_JDATE 1`
+set CUR_JDATE = `$PATH_SYSDIR/bin/yj_next $CUR_JDATE 1`
+
+########End the Loop of time   ################
+end
+@ DOMAINS_GRID ++
+end ##end of DOMAINS_RES
+#mv output ..
+
+rm -f wrfout_d0*

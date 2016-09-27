@@ -1,0 +1,201 @@
+#!/bin/sh
+
+MYDIR=`/usr/bin/dirname $0`
+cd $MYDIR || exit 1
+MYDIR=`/bin/pwd`
+MYNAME=`/bin/basename $0`
+
+ECHO="echo LOG:${MYNAME}:"
+
+if [ ! -f $MYDIR/wrf_run.config ]; then
+  $ECHO "$MYDIR/wrf_run.config does not exist"
+  exit 1
+fi
+
+source $MYDIR/wrf_run.config
+
+if [ $# -eq 1 ]; then
+  INIT_TIME=$1
+else
+  $ECHO "Usage: $0 Initial_time"
+  $ECHO " e.g.: $0 2007010100"
+  exit 1
+fi
+
+OutputDir=$DATA_WRF_OUTPUT
+
+NoOfDays=$MET_SIM_N_DAYS
+
+if [ ${#INIT_TIME} -ne 10 ]; then
+  $ECHO "Invalid date input ${INIT_TIME}, must be in YYYYMMDDhh"
+  exit 1
+fi
+
+/bin/date -d "${INIT_TIME:0:8} ${INIT_TIME:8:2}" +%Y%m%d%H > /dev/null 2>&1
+if [ $? -ne 0 ]; then
+  $ECHO "Invalid date input ${INIT_TIME}, must be in YYYYMMDDhh"
+  exit 1
+fi
+
+BEG_TIME=$INIT_TIME
+END_TIME=`/bin/date -d "${BEG_TIME:0:8} ${BEG_TIME:8:2} ${NoOfDays} days" +%Y%m%d%H`
+
+if [ ! -e $OutputDir ]; then
+  $ECHO "Output directory $OutputDir does not exist"
+  exit 1
+fi
+
+$ECHO WRF Initial Time: $BEG_TIME
+$ECHO WRF Ending  Time: $END_TIME
+$ECHO WRF Output  Directory: $OutputDir
+$ECHO WRF Current Directory: $MYDIR
+
+if [ -z $FC_MODE ]; then
+  $ECHO "Error: FC_MODE does not set"
+  exit 1
+fi
+echo "$BEG_TIME $END_TIME"
+#####if [ $FC_MODE -eq 0 ]; then
+#####  # New OBS files
+#####  OBSdomain=default
+#####  /bin/rm -r -f $MYDIR/obsfiles
+#####  /bin/mkdir    $MYDIR/obsfiles || exit 1
+#####  $ECHO $PATH_SYSDIR/bin/get_envf_nudging_data_v2 ${BEG_TIME} ${END_TIME} $MYDIR/obsfiles $OBSdomain
+#####  $PATH_SYSDIR/bin/get_envf_nudging_data_v2 ${BEG_TIME} ${END_TIME} $MYDIR/obsfiles $OBSdomain
+#####  # FNL/GFS files
+#####  /bin/rm -r -f $MYDIR/FNL $MYDIR/tmp_fnl
+#####  /bin/mkdir    $MYDIR/FNL $MYDIR/tmp_fnl || exit 1
+#####  if [ "$GFSData" == "fnl_grib1" ]; then
+#####    $ECHO $PATH_SYSDIR/bin/get_envf_fnl ${BEG_TIME} ${END_TIME} $MYDIR/tmp_fnl
+#####    $PATH_SYSDIR/bin/get_envf_fnl ${BEG_TIME} ${END_TIME} $MYDIR/tmp_fnl
+#####  elif [ "$GFSData" == "fnl_grib2" ]; then
+#####    $ECHO $PATH_SYSDIR/bin/get_envf_fnl_grib2 ${BEG_TIME} ${END_TIME} $MYDIR/tmp_fnl
+#####    $PATH_SYSDIR/bin/get_envf_fnl_grib2 ${BEG_TIME} ${END_TIME} $MYDIR/tmp_fnl
+#####  elif [ "$GFSData" == "gfs0p25" ]; then
+#####    $ECHO $PATH_SYSDIR/bin/get_envf_gfs_0.25deg.archive ${BEG_TIME} ${END_TIME} $MYDIR/tmp_fnl
+#####    $PATH_SYSDIR/bin/get_envf_gfs_0.25deg.archive ${BEG_TIME} ${END_TIME} $MYDIR/tmp_fnl || exit 1
+#####  else
+#####    $ECHO "Invalid GFSData value = ${GFSData} defined in wrf_run.config, must be either fnl_grib1, fnl_grib2 or gfs0p25"
+#####    exit 1
+#####  fi
+#####  /usr/bin/find $MYDIR/tmp_fnl -type f -exec /bin/mv -v {} $MYDIR/FNL/ \;
+#####  /bin/rm -r -f $MYDIR/tmp_fnl
+#####  # for TC Bogus
+#####  ./find_wrf_initfile ${BEG_TIME}
+#####  BTime=${BEG_TIME:0:8}
+#####  BOGUS_ROOT=$MYDIR/TC_BOGUS
+#####  /bin/rm -r -f $BOGUS_ROOT/typhoon_mesg $BOGUS_ROOT/tmp_typhoon
+#####  /bin/mkdir    $BOGUS_ROOT/typhoon_mesg $BOGUS_ROOT/tmp_typhoon || exit 1
+#####  $ECHO $PATH_SYSDIR/bin/get_envf_typhoon_mesg $BTime $MET_SIM_N_DAYS $BOGUS_ROOT/tmp_typhoon
+#####  $PATH_SYSDIR/bin/get_envf_typhoon_mesg $BTime $MET_SIM_N_DAYS $BOGUS_ROOT/tmp_typhoon
+#####  /usr/bin/find $BOGUS_ROOT/tmp_typhoon -type f -exec /bin/mv -v {} $BOGUS_ROOT/typhoon_mesg/ \;
+#####  /bin/rm -r -f $BOGUS_ROOT/tmp_typhoon
+#####elif [ $FC_MODE -eq 1 ]; then
+#####  /bin/rm -r -f $MYDIR/GFS $MYDIR/tmp_gfs
+#####  /bin/mkdir    $MYDIR/GFS $MYDIR/tmp_gfs || exit 1
+#####  if [ "$GFSData" == "gfs1p00" ]; then
+#####    $ECHO $PATH_SYSDIR/bin/get_envf_gfs ${BEG_TIME} ${END_TIME} $MYDIR/tmp_gfs
+#####    $PATH_SYSDIR/bin/get_envf_gfs2 ${BEG_TIME} ${END_TIME} $MYDIR/tmp_gfs
+#####  elif [ "$GFSData" == "gfs0p25" ]; then
+#####    $ECHO $PATH_SYSDIR/bin/get_envf_gfs_0.25deg ${BEG_TIME} ${END_TIME} $MYDIR/tmp_gfs
+#####    $PATH_SYSDIR/bin/get_envf_gfs_0.25deg ${BEG_TIME} ${END_TIME} $MYDIR/tmp_gfs
+#####  else
+#####    $ECHO "Invalid GFSData value = ${GFSData} defined in wrf_run.config, must be either gfs1p00 or gfs0p25"
+#####    exit 1
+#####  fi
+#####  /usr/bin/find $MYDIR/tmp_gfs -type f -exec /bin/mv -v {} $MYDIR/GFS/ \;
+#####  /bin/rm -r -f $MYDIR/tmp_gfs
+#####  # for TC Bogus
+#####  ./find_wrf_initfile ${BEG_TIME}
+#####  #BTime=`/bin/date -d "${BEG_TIME:0:8} ${BEG_TIME:8:2}:00:00 1 day ago" +%Y%m%d%H`
+#####  BTime=${BEG_TIME:0:8}
+#####  BOGUS_ROOT=$MYDIR/TC_BOGUS
+#####  /bin/rm -r -f $BOGUS_ROOT/typhoon_mesg $BOGUS_ROOT/tmp_typhoon
+#####  /bin/mkdir    $BOGUS_ROOT/typhoon_mesg $BOGUS_ROOT/tmp_typhoon || exit 1
+#####  $ECHO $PATH_SYSDIR/bin/get_envf_typhoon_mesg $BTime $MET_SIM_N_DAYS $BOGUS_ROOT/tmp_typhoon
+#####  $PATH_SYSDIR/bin/get_envf_typhoon_mesg $BTime $MET_SIM_N_DAYS $BOGUS_ROOT/tmp_typhoon
+#####  /usr/bin/find $BOGUS_ROOT/tmp_typhoon -type f -exec /bin/mv -v {} $BOGUS_ROOT/typhoon_mesg/ \;
+#####  /bin/rm -r -f $BOGUS_ROOT/tmp_typhoon
+#####else
+#####  $ECHO "FC_MODE must be 0 or 1"
+#####  exit 1
+#####fi
+#####
+#####GTS_TEMP_ROOT=$MYDIR/gts_decoder/gts_temp
+#####/bin/rm -r -f $GTS_TEMP_ROOT
+#####/bin/mkdir $GTS_TEMP_ROOT
+#####BEG_YES_TIME=`/bin/date -d "${BEG_TIME:0:8} ${BEG_TIME:8:2} 1 days ago" +%Y%m%d%H`
+#####let "NO_DAYS = $MET_SIM_N_DAYS + 2"
+#####$ECHO $PATH_SYSDIR/bin/get_envf_gts ${BEG_YES_TIME:0:8} $NO_DAYS $GTS_TEMP_ROOT
+#####$PATH_SYSDIR/bin/get_envf_gts ${BEG_YES_TIME:0:8} $NO_DAYS $GTS_TEMP_ROOT
+#####
+#####OutputDirx=${OutputDir}/${BEG_TIME:0:4}/${BEG_TIME:0:6}/${BEG_TIME}
+#####if [ -d $OutputDirx ]; then
+#####  $ECHO "Output directory $OutputDirx exists, remove it"
+#####  /bin/rm -r -f $OutputDirx
+#####fi
+#####
+#####/bin/rm -r -f $MYDIR/outputs
+#####/bin/mkdir    $MYDIR/outputs || {
+#####  $ECHO "Failed to create $MYDIR/outputs directory"
+#####  exit 1
+#####}
+#####
+#####Ncpu=`$PATH_SYSDIR/bin/mpi_total_cpus $MPIHostFile` || {
+#####  $ECHO "Failed to run $PATH_SYSDIR/bin/mpi_total_cpus $MPIHostFile"
+#####  exit 1
+#####}
+#####export Ncpu
+#####
+#####$PATH_SYSDIR/bin/start_mpd || {
+#####  $ECHO "Failed to run $PATH_SYSDIR/bin/start_mpd"
+#####  exit 1
+#####}
+#####
+#####$ECHO Cleanup files in EPDdata directory
+#####/usr/bin/find EPDdata -mindepth 1 -maxdepth 1 -type f -exec /bin/rm -v {} \;
+#####
+#####$ECHO Clenaup files in met_WRFV3/test/em_real directory
+#####/usr/bin/find met_WRFV3/test/em_real -mindepth 1 -maxdepth 1 -name 'wrfout_d0*' -exec /bin/rm -v {} \;
+#####
+#####if [ $MET_REALTIME_COPY_OUTPUT -eq 1 ]; then
+#####  WRF_Status=$MYDIR/WRF_DONE
+#####  if [ -f $MYDIR/WRF_DONE ]; then
+#####    /bin/rm $WRF_Status
+#####  fi
+#####  CopyMetDataLog=/tmp/copy_met_data.log-${BEG_TIME}
+#####  PID=$$
+#####  $ECHO $PATH_SYSDIR/bin/copy_met_data wrf $BEG_TIME $WRF_Status $PID
+#####  $PATH_SYSDIR/bin/copy_met_data wrf $BEG_TIME $WRF_Status $PID > $CopyMetDataLog 2>&1 &
+#####  $ECHO copy_met_data log = $CopyMetDataLog
+#####fi
+#####
+#####if [ -z "$WRF_CSH" ]; then
+#####  WRF_CSH=./wrf.csh
+#####fi
+#####$ECHO "WRF_CSH = $WRF_CSH"
+#####$WRF_CSH $BEG_TIME $END_TIME || {
+#####  $ECHO "Failed to run ./wrf.csh $BEG_TIME $END_TIME"
+#####  $PATH_SYSDIR/bin/stop_mpd
+#####  exit 1
+#####}
+#####
+#####if [ $MET_REALTIME_COPY_OUTPUT -eq 1 ]; then
+#####  /bin/touch $WRF_Status
+#####  wait
+#####fi
+#####
+#####$PATH_SYSDIR/bin/stop_mpd
+#####
+./check_output $BEG_TIME || {
+  $ECHO "Failed to run ./check_output $BEG_TIME"
+  exit 1
+}
+
+./move_data $BEG_TIME $OutputDir
+if [ $? -ne 0 ]; then
+  $ECHO "Failed to run ./move_data $BEG_TIME $OutputDir"
+  exit 1
+fi
+
+exit 0

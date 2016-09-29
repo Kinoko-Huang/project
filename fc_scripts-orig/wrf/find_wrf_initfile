@@ -1,0 +1,50 @@
+#!/bin/sh
+
+#PATH_DATADIR=/home/pathop/hq20/data
+
+if [ $# -eq 1 ]; then
+  INIT_TIME=$1
+else
+  echo "Usage: $0 YYYYMMDDhh"
+  exit 1
+fi
+
+MYDIR=`/usr/bin/dirname $0`
+cd $MYDIR
+MYDIR=`/bin/pwd`
+
+echo Current directory $MYDIR
+WRF_DATADIR=$PATH_DATADIR/wrf
+
+/usr/bin/find TC_BOGUS/wrfout_tmp -type f -name "wrfout_d01_*" -exec /bin/rm -v {} \;
+
+echo INIT_TIME=$INIT_TIME
+iYYYY=${INIT_TIME:0:4}
+iMM=${INIT_TIME:4:2}
+iDD=${INIT_TIME:6:2}
+iHH=${INIT_TIME:8:2}
+
+Found=0
+for d in 1 2 3
+do
+  LastDay=`/bin/date -d "${INIT_TIME:0:8} ${INIT_TIME:8:2}:00:00 $d day ago" +%Y%m%d%H`
+  echo LastDay=$LastDay
+  #lYYYY=${INIT_TIME:0:4}
+  lYYYY=${LastDay:0:4}
+  lMM=${LastDay:4:2}
+  lDD=${LastDay:6:2}
+  lHH=${LastDay:8:2}
+  DataFile=$WRF_DATADIR/${lYYYY}/${lYYYY}${lMM}/${lYYYY}${lMM}${lDD}${lHH}/wrfout_d01_${iYYYY}-${iMM}-${iDD}_${iHH}:00:00
+  if [ -f $DataFile ]; then
+    Found=1
+    break
+  fi
+  echo "Warning: Data file $DataFile not found"
+done
+
+if [ $Found -eq 1 ]; then
+  echo "Data file $DataFile found"
+  /bin/cp $DataFile TC_BOGUS/wrfout_tmp/
+fi
+
+exit 0

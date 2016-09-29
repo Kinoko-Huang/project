@@ -1,0 +1,60 @@
+#!/bin/sh
+
+MYDIR=`/usr/bin/dirname $0`
+cd $MYDIR || exit 1
+MYDIR=`/bin/pwd`
+
+if [ $# -ne 2 ]; then
+  echo "Usage: $0 Init_Time Output_direcotry"
+  echo " e.g.: $0 2007010100 /home/pathop/data/wrf"
+  exit 1
+fi
+
+Init_time=$1
+Output_dir=$2
+
+if [ ${#Init_time} -ne 10 ]; then
+  echo "Invalid date input ${Init_time}, must be in YYYYMMDDhh"
+  exit 1
+fi
+
+/bin/date -d "${Init_time:0:8} ${Init_time:8:2}" +%Y%m%d%H > /dev/null 2>&1
+if [ $? -ne 0 ]; then
+  echo "Invalid date input ${Init_time}, must be in YYYYMMDDhh"
+  exit 1
+fi
+
+if [ ! -e $Output_dir ]; then
+  echo "Output directory $Output_dir does not exist"
+  exit 1
+fi
+
+FrDir=outputs/${Init_time:0:4}/${Init_time:0:6}/${Init_time}
+ToDir=$Output_dir/${Init_time:0:4}/${Init_time:0:6}/${Init_time}
+
+if [ ! -d $FrDir ]; then
+  echo "WRF output $FrDir does not exist"
+  exit 1
+fi
+
+if [ ! -d $ToDir ]; then
+  /bin/mkdir -p $ToDir || {
+    echo "Failed to create output direetory $ToDir" 
+    exit 1
+  }
+fi
+
+echo /usr/bin/rsync -av $FrDir/ $ToDir/
+/usr/bin/rsync -av $FrDir/ $ToDir/
+
+# Save WPS namelist file
+if [ $FC_MODE -eq 1 ]; then
+  WPSNameList=WPS/namelist.wps.epd.nonudging
+else
+  WPSNameList=WPS/namelist.wps.epd.d4nudging
+fi
+/bin/cp -v $WPSNameList $ToDir/
+
+echo "Output saved to $ToDir"
+
+exit $?

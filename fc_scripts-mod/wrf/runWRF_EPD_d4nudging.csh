@@ -1,5 +1,7 @@
 #!/bin/csh -f
 
+source ../../../../domains_def.config
+
 #clean the residues
 rm -f met_em.*
 ln -sf ${WPS_root}/met_em* .

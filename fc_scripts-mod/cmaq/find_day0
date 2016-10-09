@@ -29,14 +29,15 @@ do
     echo "Output directory ${OutputDir} does not exist"
     continue
   fi
-for DOMAINS_RES in $G_DOMAINS_RES_gov
-  files=`/usr/bin/find $OutputDir/${DOMAINS_RES}km -mindepth 1 -maxdepth 1 -type f -name   "${Prefix}.*.${INIT_JDATE}" -print`   
+  DOMAINS_RES=`ls $OutputDir`
+  for CMAQ_RES in $DOMAINS_RES
+  files=`/usr/bin/find $OutputDir/${CMAQ_RES}km -mindepth 1 -maxdepth 1 -type f -name   "${Prefix}.*.${INIT_JDATE}" -print`   
   if [ -z $files ]; then
     echo "No valid CCTM_V5g_ebi_cb05cl_ae5_aq_mpi_pg64_mpich2....${INIT_YES_JDATE} found in $OutputDir"
     continue
   fi
   do
-    CMAQ_output_dir=outputs/run.OP_mm5_cb05cl/${DOMAINS_RES}km
+    CMAQ_output_dir=outputs/run.OP_mm5_cb05cl/${CMAQ_RES}km
     if [ ! -d $CMAQ_output_dir ]; then
       /bin/mkdir -p $CMAQ_output_dir || {
         echo "Failed to create $CMAQ_output_dir directory"

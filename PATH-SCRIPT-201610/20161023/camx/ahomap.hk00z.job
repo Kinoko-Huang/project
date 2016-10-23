@@ -1,0 +1,93 @@
+#!/bin/csh -f 
+#
+# User input data definition
+#
+# Lines 1 & 2: Coordiniate projection and master/coarse grid location definition
+# Coordinate project |UTM
+# xorg,yorg,izone    |-316.,2808.,15                (km,km,unitless)
+# or
+# Coordinate project |LAMBERT
+# xorg,yrog,clon,clat|-2000,-1700,-100,40,60,30     (km,km,deg,deg,deg,deg)
+# true1,true2
+# or
+# Coordinate project |LATLON
+# xorg,yorg          |30,-120                       (deg,deg)
+# or 
+# Coordinate project |POLAR
+# xorg,yorg,plon,plat|-100,-200,-100,40             (km,km,deg,deg)
+#
+# Line 3: Master/coarse grid cell size (km)
+# dx,dy              |16,16
+#
+# Line 4: Output file name
+# Output filename    |ahomap.test
+#
+# Line 5: Snow flag (T=5th albedo bin set for snow, F=no snow albedo included)
+# Process for snow?  |.true.
+#
+# Line 6: Number of grids to process
+# Number of grids    |1
+#
+# Lines 7 and 8: Landuse filename and domain size (number of grid cells)
+#                List the master/coarse grid first, then any/all fine grids
+# Landuse file       |camx.landuse
+# nx, ny             |95,83
+#
+# Line 9: Number of TOMS input data files
+# Number of TOMS file|28
+#
+# Lines 10+: Begin date, End date,and the Ozone data file name.
+#            Requires begin date (YYMMDD) and end date (YYMMDD) for ozone 
+#            column data.
+#
+# Example: for August 15, 1993 daily ozone data, 
+# Bday,Eday,TOMS file|930815,930815,ozcol_data/ga930815.m3t
+#
+# Example: for August 1993 monthly ozone data,
+# Bday,Eday,TOMS file|930801,930831,ozcol_data/m3_aug93.mon
+#
+source ../../../../domains_def.config
+
+set BEG_DATE = $argv[1]
+set END_DATE = $argv[2]
+set CUR_JDATE  = $BEG_DATE
+set DOMAINS_GRID = $argv[3]
+set DOMAINS_RES = $argv[4]
+
+rm -f ../msg/log.ahomap.*.${DOMAINS_RES}km
+
+while ( $CUR_JDATE <= $END_DATE )
+
+set CUR_Y   = `$PATH_SYSDIR/bin/j2g $CUR_JDATE | awk '{print $1}'`
+set CUR_M     = `$PATH_SYSDIR/bin/j2g $CUR_JDATE | awk '{print $2}'`
+set CUR_D     = `$PATH_SYSDIR/bin/j2g $CUR_JDATE | awk '{print $3}'`
+set CUR_YY     = `echo $CUR_Y | cut -c 3-4`
+
+set CUR_GDATE = $CUR_Y$CUR_M$CUR_D
+set CUR_GDATE_YY = $CUR_YY$CUR_M$CUR_D
+
+ln -sf $CAMx_HOME/inputs/met/${DOMAINS_RES}/camx_lu.$CUR_GDATE.${DOMAINS_RES}km.bin camx_lu.$CUR_GDATE.${DOMAINS_RES}km.bin
+ln -sf $CAMx_HOME/Raw_DATA/TOMs/L3_ozone_omi_$CUR_GDATE.txt L3_ozone_omi_$CUR_GDATE.txt
+
+$cwd/../src/ahomap.linux << EOF >& ../msg/log.ahomap.$CUR_JDATE.${DOMAINS_RES}km
+Coordinate project |$MAP_PROJECTION
+xorg,yorg,izone    |${XCRO_AQMS_Dx[$DOMAINS_GRID]},${YCRO_AQMS_Dx[$DOMAINS_GRID]},$LAMBERT_CEN_LON,$LAMBERT_CEN_LAT,$LAMBERT_TRUE_LAT1,$LAMBERT_TRUE_LAT2
+dx,dy              |${DOMAINS_RES},${DOMAINS_RES}
+Output filename    |ahomap.hk.${CUR_GDATE}.${DOMAINS_RES}km
+Process for snow?  |.false.
+Number of grids    |1
+Landuse filename   |camx_lu.$CUR_GDATE.${DOMAINS_RES}km.bin
+nx,ny              |${NCOLS_AQMS_Dx[$DOMAINS_GRID]},${NROWS_AQMS_Dx[$DOMAINS_GRID]}
+Numbr of TOMS files|1
+Bday,Eday,TOMS file|$CUR_GDATE_YY,$CUR_GDATE_YY,L3_ozone_omi_$CUR_GDATE.txt
+EOF
+
+rm -f camx_lu.$CUR_Y$CUR_M$CUR_D.${DOMAINS_RES}km.bin
+rm -f L3_ozone_omi_$CUR_Y$CUR_M$CUR_D.txt
+
+
+mv ahomap.hk.${CUR_GDATE}.${DOMAINS_RES}km $CAMx_HOME/inputs/ahomap
+
+set CUR_JDATE = `$PATH_SYSDIR/bin/yj_next $CUR_JDATE 1`
+
+end

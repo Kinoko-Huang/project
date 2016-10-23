@@ -1,0 +1,196 @@
+#!/bin/sh 
+
+MYDIR=`/usr/bin/dirname $0`
+cd $MYDIR || exit 1
+MYDIR=`/bin/pwd`
+MYNAME=`/bin/basename $0`
+
+UseAveTOMs=1
+CAMxMET_INPUT=$DATA_M2CX_OUTPUT
+OUTPUTDIR=$DATA_CAMX_OUTPUT
+
+ECHO="echo LOG:${MYNAME}:"
+
+if [ $# -eq 1 ]; then
+  # Met initial time
+  INIT_TIME=$1
+else
+  $ECHO "Usage: Init_time"
+  $ECHO " e.g.: 2007010200"
+  exit 1
+fi
+
+if [ ${#INIT_TIME} -ne 10 ]; then
+  $ECHO "Invalid initial time $INIT_TIME, must be in YYYYMMDDhh"
+  exit 1
+fi
+
+DT=`/bin/date -d "${INIT_TIME:0:8} ${INIT_TIME:8:2}:00:00" +%Y%m%d%H 2>/dev/null`
+if [ "$DT" != "$INIT_TIME" ]; then
+  $ECHO "Invalid initial time $INIT_TIME"
+  exit 1
+fi
+
+GREBTIME=`/bin/date -d "${INIT_TIME:0:8} ${INIT_TIME:8:2}:00:00 $CTM_SKIP_N_DAYS days" +%Y%m%d%H`
+let "ndays = CTM_SIM_N_DAYS - 1"
+GREETIME=`/bin/date -d "${GREBTIME:0:8} ${GREBTIME:8:2}:00:00 $ndays days" +%Y%m%d%H`
+
+GREBDATE=${GREBTIME:0:8}
+GREEDATE=${GREETIME:0:8}
+
+$ECHO GREBDATE=$GREBDATE
+$ECHO GREEDATE=$GREEDATE
+
+export CAMxMET_INPUT
+
+if [ ! -f $MYDIR/camx_run.config ]; then
+  $ECHO "No $MYDIR/camx_run.config file found"
+  exit 1
+fi
+
+if [ ! -e $OUTPUTDIR ]; then
+  $ECHO "Output directory $OUTPUTDIR does not exist"
+  exit 1
+fi
+
+source $MYDIR/camx_run.config
+
+if [ $CTM_CLEAN_OUTPUT -eq 1 ]; then
+  # Cleanup outputs directory
+  if [ -e outputs ]; then
+    /bin/rm -r -f outputs
+  fi
+  /bin/mkdir outputs || {
+    $ECHO "Failed to create outputs directory"
+    exit 1
+  }
+  # Cleanup inputs directory
+  for adir in inputs/ahomap inputs/emiss inputs/icbc inputs/tuv Raw_DATA/TOMs
+  do
+    if [ -e $adir ]; then
+      /bin/rm -r -f $adir
+    fi
+    /bin/mkdir $adir || {
+      $ECHO "Failed to create inputs directory $adir"
+      exit 1
+    }
+  done
+else
+  $ECHO "outputs directory is not cleaned up"
+fi
+
+
+##### Create link to MET input data ################
+MET_DATA_Link=$MYDIR/inputs/met
+if [ -L $MET_DATA_Link ]; then
+  /bin/rm $MET_DATA_Link
+fi
+
+MET_DATA_Dir=$CAMxMET_INPUT/${INIT_TIME:0:4}/${INIT_TIME:0:6}/${INIT_TIME}
+$ECHO MET_DATA_Dir=$MET_DATA_Dir
+if [ ! -e $MET_DATA_Dir ]; then
+  $ECHO "Met Input data $MET_DATA_Dir does not exist!"
+  exit 1
+fi
+/bin/ln -s $MET_DATA_Dir $MET_DATA_Link || exit 1
+
+if [ $UseAveTOMs -eq 0 ]; then
+  ##### Download TOMs data from ENVF server ##########
+  $PATH_SYSDIR/bin/get_envf_tom $GREBDATE $GREEDATE $MYDIR/Raw_DATA/TOMs
+else
+  #### Use the average TOMs data #####################
+  d=$GREBDATE
+  while [ $d -le $GREEDATE ]
+  do
+    $ECHO ./copy_TOMs ${d}
+    ./copy_TOMs ${d} || {
+      $ECHO "Failed to run ./copy_TOMs ${d}"
+      exit 1
+    }
+    d=`/bin/date -d "$d 1 day" +%Y%m%d`
+  done
+  if [ "${INIT_TIME:8:2}" = "12" ]; then
+    $ECHO ./copy_TOMs ${d}
+    ./copy_TOMs ${d} || {
+      $ECHO "Failed to run ./copy_TOMs ${d}"
+      exit 1
+    }
+  fi  
+fi
+
+if [ $CTM_USE_SMOKE -eq 1 ]; then
+  # Use smoke output as emission input data
+  SmokeDir=$DATA_SMOKE_OUTPUT/${INIT_TIME:0:4}/${INIT_TIME:0:6}/${INIT_TIME}/camx
+  if [ ! -e $SmokeDir ]; then
+    $ECHO "Input SMOKE data directory $SmokeDir does not exist"
+    exit 1
+  fi
+  ToDir=inputs/emiss/merged
+  if [ -e $ToDir ]; then
+    /bin/rm -r -f $ToDir
+  fi
+  /bin/mkdir -p $ToDir || {
+    $ECHO "Failed to create $ToDir"
+    exit 1
+  }
+  $ECHO "Copy data to $ToDir"
+  /usr/bin/rsync -av $SmokeDir/ $ToDir || {
+    $ECHO "Failed to run /usr/bin/rsync -av $SmokeDir/ $ToDir"
+    exit 1
+  }
+fi
+
+
+if [ $CTM_COLD_START -eq 0 -a $CTM_CLEAN_OUTPUT -eq 1 ]; then
+  ./find_day0 $INIT_TIME
+  stat=$?
+  if [ $stat -eq 1 ]; then
+    $ECHO "Failed to run ./find_day0 $INIT_TIME"
+    exit 1
+  elif [ $stat -eq 2 ]; then
+    $ECHO "WARNING: Cannot find day0 CAMx output files $INIT_TIME"
+    export CTM_COLD_START=1
+    $ECHO "WARNING: Force the CAMx run to cold start, CTL_COLD_START=${CTM_COLD_START}"
+  fi
+fi
+
+##### Start mpd for MPICH2 applications ###########
+/bin/cp $MPIHostFile $MYDIR/runfiles/nodes || {
+  echo "Failed to copy $MPIHostFile to $MYDIR/runfiles/nodes"
+  exit 1
+}
+
+NProcs=`$PATH_SYSDIR/bin/mpi_total_cpus`
+if [ $? -ne 0 ]; then
+  $ECHO "Failed to run $PATH_SYSDIR/bin/mpi_total_cpus"
+  exit 1
+fi
+
+export NProcs
+$ECHO "No. of Processors = ${NProcs}"
+
+$PATH_SYSDIR/bin/start_mpd
+
+##### Start CAMx ###################################
+$ECHO Run ./Runall.OP.csh $GREBTIME $GREETIME
+./Runall.OP.csh $GREBTIME $GREETIME || {
+  $ECHO "Failed to run ./Runall.OP.csh $GREBTIME $GREETIME"
+  $PATH_SYSDIR/bin/stop_mpd
+  exit 1
+}
+
+$PATH_SYSDIR/bin/stop_mpd
+
+$ECHO Run ./check_output ${INIT_TIME}
+./check_output ${INIT_TIME} || {
+  $ECHO "Failed to run ./check_output ${INIT_TIME}"
+  exit 1
+}
+
+$ECHO ./move_output ${INIT_TIME} $OUTPUTDIR
+./move_output ${INIT_TIME} $OUTPUTDIR || {
+  $ECHO "Failed to run ./move_output ${INIT_TIME} $OUTPUTDIR"
+  exit 1
+}
+
+exit 0

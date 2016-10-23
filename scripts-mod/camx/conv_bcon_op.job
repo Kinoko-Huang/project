@@ -1,0 +1,220 @@
+#!/bin/csh -f
+#
+#   This is a sample runscript to convert CMAQ BCON files to CAMx BC 
+#   files.
+#   Set the following file names and run the script:
+#
+#   INPUT_CMAQ_BCON  - CMAQ BCON file name (input)
+#   OUTPUT_CAMx_BC   - CAMx BC file name (output)
+#   SPECIES_MAPPING  - Species Mapping Table file name (input)
+#
+source ../../../../domains_def.config
+
+set BEG_JDATE = $argv[1]
+set END_JDATE = $argv[2]
+set CUR_JDATE = $BEG_JDATE
+set DOMAINS_RES = ${G_DOMAINS_RES_CAMX[1]}
+
+rm -f ../msg/log.bc.spcmap.*.${DOMAINS_RES}km
+rm -f ../msg/log.bc.cmaq2uam.*.${DOMAINS_RES}km
+rm -f ../msg/log.m3tshift.bc.*
+rm -f ../Output/ICBC/BCON_COMBINE_*
+
+while ( $CUR_JDATE <= $END_JDATE )
+  
+#  set CUR_Y = `$CAMx_HOME/datelib/j2g $CUR_JDATE | awk '{print $1}'`
+#  set CUR_M   = `$CAMx_HOME/datelib/j2g $CUR_JDATE | awk '{print $2}'`
+#  set CUR_D   = `$CAMx_HOME/datelib/j2g $CUR_JDATE | awk '{print $3}'`
+  set CUR_Y = `$PATH_SYSDIR/bin/j2g $CUR_JDATE | awk '{print $1}'`
+  set CUR_M = `$PATH_SYSDIR/bin/j2g $CUR_JDATE | awk '{print $2}'`
+  set CUR_D = `$PATH_SYSDIR/bin/j2g $CUR_JDATE | awk '{print $3}'`
+  set DOW  = `$CAMx_HOME/datelib/yyyymmdd2dow.7day.lnx $CUR_Y$CUR_M$CUR_D`
+######### BCON is seasonal change, choose the season ###########
+  if ( "$CUR_M" == "12" | "$CUR_M" == "01" | "$CUR_M" == "02" ) then
+    set season = winter
+  else if ( "$CUR_M" == "03" | "$CUR_M" == "04" | "$CUR_M" == "05" ) then
+    set season = spring
+  else if ( "$CUR_M" == "06" | "$CUR_M" == "07" | "$CUR_M" == "08" ) then
+    set season = summer
+  else if ( "$CUR_M" == "09" | "$CUR_M" == "10" | "$CUR_M" == "11" ) then
+    set season = autumn
+  endif
+ 
+  switch ( $DOW )
+  case sat:
+    switch ( $season )
+    case winter:
+      set DATEDOW = 2006014
+      breaksw
+    case spring:
+      set DATEDOW = 2006105
+      breaksw
+    case summer:
+      set DATEDOW = 2006196
+      breaksw
+    case autumn:
+      set DATEDOW = 2006287
+      breaksw
+    endsw
+    breaksw
+  case sun:
+    switch ( $season ) 
+    case winter:
+      set DATEDOW = 2006015
+      breaksw
+    case spring:
+      set DATEDOW = 2006106
+      breaksw
+    case summer:
+      set DATEDOW = 2006197
+      breaksw
+    case autumn:
+      set DATEDOW = 2006288
+      breaksw
+    endsw
+    breaksw
+  case mon:
+    switch ( $season )
+    case winter:
+      set DATEDOW = 2006016
+      breaksw
+    case spring:
+      set DATEDOW = 2006107
+      breaksw
+    case summer:
+      set DATEDOW = 2006198
+      breaksw
+    case autumn:
+      set DATEDOW = 2006289
+      breaksw
+    endsw
+    breaksw
+  case tue:
+    switch ( $season )
+    case winter:
+      set DATEDOW = 2006017
+      breaksw
+    case spring:
+      set DATEDOW = 2006108
+      breaksw
+    case summer:
+      set DATEDOW = 2006199
+      breaksw
+    case autumn:
+      set DATEDOW = 2006290
+      breaksw
+    endsw
+    breaksw
+  case wed:
+    switch ( $season )
+    case winter:
+      set DATEDOW = 2006018
+      breaksw
+    case spring:
+      set DATEDOW = 2006109
+      breaksw
+    case summer:
+      set DATEDOW = 2006200
+      breaksw
+    case autumn:
+      set DATEDOW = 2006291
+      breaksw
+    endsw
+    breaksw
+  case thu:
+    switch ( $season )
+    case winter:
+      set DATEDOW = 2006019
+      breaksw
+    case spring:
+      set DATEDOW = 2006110
+      breaksw
+    case summer:
+      set DATEDOW = 2006201
+      breaksw
+    case autumn:
+      set DATEDOW = 2006292
+      breaksw
+    endsw
+    breaksw
+  case fri:
+    switch ( $season )
+    case winter:
+      set DATEDOW = 2006020
+      breaksw
+    case spring:
+      set DATEDOW = 2006111
+      breaksw
+    case summer:
+      set DATEDOW = 2006202
+      breaksw
+    case autumn:
+      set DATEDOW = 2006293
+      breaksw
+    endsw
+    breaksw
+   endsw
+
+  ######## Run m3tshift to change bc time ############
+  ./run.change_bc${BEG_H}z_time.csh $CUR_JDATE $DATEDOW >& ../msg/log.m3tshift.bc.$CUR_JDATE
+
+  set INPUT_CMAQ_BCON  = $cwd/../Output/ICBC/BCON_COMBINE_$CUR_JDATE
+  set OUTPUT_CAMx_BC   = $CAMx_HOME/inputs/icbc/bc.camx.${DOMAINS_RES}km.$CUR_JDATE.uam
+  set SPECIES_MAPPING  = ./Species_Mapping_Tables/MAPTBL.CAMx4.5_CB05_CF.CMAQ_CB05_AE3_ICBC
+
+######################################################################
+#
+#   SPCMAP creates a new I/O-API file with new variables each of which
+#   is a linear combination of variables from the input I/O-API file.
+#   Units of the new variables are user-defined.
+#
+#   INFILE    - file name for input file
+#   OUTFILE   - file name for output file
+#   MAPTBL    - file name for species mapping table
+#
+######################################################################
+setenv INFILE  $INPUT_CMAQ_BCON
+setenv OUTFILE tmp_bcon
+setenv MAPTBL  $SPECIES_MAPPING
+rm -f $OUTFILE
+
+../src/spcmap >& ../msg/log.bc.spcmap.$CUR_JDATE.${DOMAINS_RES}km
+
+######################################################################
+#
+#   CMAQ2UAM converts CMAQ input files (I/O-API) into corresponding
+#   CAMx input files (UAM-IV format). It only converts file formats
+#   and units if needed. No species mapping.
+#
+#   CMAQICON        - file name for CMAQ IC input
+#   CMAQBCON        - file name for CMAQ BC input
+#   CMAQEMIS        - file name for CMAQ Emissions input
+#
+#   BCON_INTRP      - flag to generate hourly BC from X-hourly BC
+#                     T or Y to interpolate BC; otherwise, F or N
+#                     default value is FALSE
+#                     ignored if File Type is not BCON
+#
+#   File Type       - input file type (ICON, BCON, or EMIS)
+#   OutFile1        - first output file name (CAMx IC, BC, or AR)
+#   OutFile2        - second output file name (CAMx TopC or PT)
+#   Output Timezone - timezone for output (8 for PST, etc.)
+#
+######################################################################
+setenv CMAQBCON tmp_bcon
+rm -f $OUTPUT_CAMx_BC
+
+###setenv BCON_INTRP T
+
+../src/cmaq2uam << EOF >& ../msg/log.bc.cmaq2uam.$CUR_JDATE.${DOMAINS_RES}km
+File Type          |BCON
+OutFile1 (IC,BC,AR)|$OUTPUT_CAMx_BC
+OutFile2 (TopC,PT) |
+Output Timezone    |0
+EOF
+
+rm -f tmp_bcon
+
+set CUR_JDATE = `$PATH_SYSDIR/bin/yj_next $CUR_JDATE 1`
+
+end

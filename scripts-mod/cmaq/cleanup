@@ -1,0 +1,28 @@
+#!/bin/sh
+
+if [ $CTM_CLEAN_OUTPUT -eq 0 ]; then
+  echo "Cleanup is disabled"
+  exit 0
+fi
+
+MYDIR=`/bin/pwd`
+
+echo Cleanup $MYDIR/inputs/met
+/bin/rm $MYDIR/inputs/met/*km/*
+
+echo Cleanup $MYDIR/inputs/emiss
+/bin/rm $MYDIR/inputs/emiss/*km/*
+
+echo Cleanup $MYDIR/inputs/icbc
+/bin/rm $MYDIR/inputs/icbc/*km/*
+
+echo Cleanup outputs
+/bin/rm -r -f outputs
+/bin/mkdir    outputs
+
+echo Cleanup inputs/jproc
+/bin/rm -r -f inputs/jproc
+/bin/mkdir    inputs/jproc
+
+echo Cleanup DONE
+exit 0

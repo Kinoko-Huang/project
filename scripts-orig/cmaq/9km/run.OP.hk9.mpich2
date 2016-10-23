@@ -1,0 +1,146 @@
+#!/bin/csh -f
+
+#> define the machines that will run the application
+limit stacksize unlimited
+#cat << ieof > nodes 
+#hqlx103:16
+#ieof
+
+#setenv MPICH2BIN "/usr/local/pgi-cdk-8.0.5cos5/linux86-64/8.0/mpi2/mpich/bin"
+
+#> horizontal domain decomposition
+#setenv NPROCS "16" 
+#setenv NPCOL_NPROW "8 2"
+
+#> set the simulation period
+#set NEW_START = true       #always TRUE on first day
+#set START_DATE = 2004245   #first day
+set START_DATE = $argv[1]   #first day
+
+set NEW_START  = false    #always FALSE for restart
+set END_DATE = $START_DATE     #last day 
+
+echo "START/END DATE: $START_DATE - $END_DATE"
+
+#> set the scenario
+set M3PLAN = HK 
+set M3CASE = run.OP_mm5_cb05cl
+#set M3CASE = run4.prelim_wrf_cb05cl 
+#set M3CASE = run1.prelim_mm5_s99 
+set CHEM   = cb05cl 
+set M3GRID = 04
+set M3VLEV = 19
+setenv M3EXTN mpich2 
+
+#> horizontal grid defn; check GRIDDESC file for GRID_NAME options
+setenv GRIDDESC $OPDIR/inputs/GRIDDESC 
+setenv GRID_NAME HKPATH_9KM 
+
+setenv KZMIN F
+
+#> executable
+#setenv APPL v47_ebi_cb05cl_ae5_aq_mpi_pg64 
+setenv APPL V5g_ebi_cb05cl_ae5_aq
+setenv EXEC CCTM_$APPL
+
+#> output files and directories
+setenv M3OUT $MY_OUTPUT/$M3CASE/9km 
+mkdir -p $M3OUT/LOGS
+
+#> input files and directories
+setenv OCEANpath $OPDIR/inputs/ocean 
+setenv OCEANfile OCEANFILE_HK9km 
+
+setenv GC_ICpath $OPDIR/inputs/icbc/9km 
+setenv GC_ICfile ICON_cb05cl_HKPATH_9KM_$JULIBEGN
+
+setenv GC_BCpath $OPDIR/inputs/icbc/9km
+
+#setenv JVALpath $OPDIR/inputs/jproc/$YYYY
+setenv JVALpath $OPDIR/inputs/jproc
+
+setenv METpath $OPDIR/inputs/met/9km 
+
+setenv EMISpath $OPDIR/inputs/emiss/9km
+
+################
+#  master loop
+################
+
+set CUR_DATE = $START_DATE
+
+#> start the mpd ring
+#$MPICH2BIN/mpdboot -r rsh -n 1 -f nodes --verbose
+
+while ( $CUR_DATE <= $END_DATE )
+
+   rm -f CTM_LOG_* FLOOR_*
+
+   setenv TODAY $CUR_DATE
+
+   #> find out the date for the previous day
+   #@ YESTERDAY = $TODAY - 1
+   set YESTERDAY = `$PATH_SYSDIR/bin/yj_prev $TODAY 1`
+
+   # check whether this is a cold start (first day of modeling)
+   if ( $NEW_START == "true" ) then
+      set NEW_START = false
+   else
+      setenv GC_ICpath $M3OUT
+      setenv GC_ICfile ${EXEC}_${M3EXTN}.CGRID.$YESTERDAY 
+   endif
+
+   #> boundry conditons file
+   setenv GC_BCfile BCON_cb05cl_HKPATH_9KM_$TODAY
+
+   #> 7-level photolysis data w/ file header
+   setenv JVALfile JTABLE_cb05cl_$TODAY
+
+   set G_DAY = `yyyyjjj2yyyymmdd $TODAY`
+
+   #> met files
+   setenv GC2file GRIDCRO2D.9km.$G_DAY
+   setenv GD2file GRIDDOT2D.9km.$G_DAY
+   setenv MC2file METCRO2D.9km.$G_DAY
+   setenv MD3file METDOT3D.9km.$G_DAY
+   setenv MC3file METCRO3D.9km.$G_DAY
+   setenv MB3file METBDY3D.9km.$G_DAY
+
+   #> emissions
+   setenv EMISfile emiss_CB05.HongKong.9km_$TODAY.ncf 
+
+   #> start the main cctm job
+   set RUN_LOG = $M3OUT/LOGS/LOG.$APPL
+   rm -f $RUN_LOG.$TODAY
+   echo " "
+   echo "LOG: $RUN_LOG.$TODAY"
+   date
+   echo "run run.cctm ..."
+
+   ./run.cctm.mpich2 >& $RUN_LOG.$TODAY
+   if ( $status != 0 ) then
+     exit 1
+   endif
+   date
+
+   #> check "inf" or "nan" in the LOG file
+   set chk = `grep -aE "(inf|nan)" $RUN_LOG.$TODAY`
+   if ( "$chk" != "" ) then
+     echo "ERROR: inf or nan occurred"
+     exit 1
+   endif
+
+   if ( ! -f $M3OUT/${EXEC}_${M3EXTN}.CONC.$TODAY ) then
+      echo 'run.cctm unsucessful, exiting...'
+      exit 1
+   endif
+
+#  rm -fv $M3OUT/${EXEC}_${M3EXTN}.CONC.$TODAY
+
+   #> move on to the next day
+   #@ CUR_DATE++
+   set CUR_DATE = `$PATH_SYSDIR/bin/yj_next $CUR_DATE 1`
+
+end
+#> kill the mpd ring
+#$MPICH2BIN/mpdallexit

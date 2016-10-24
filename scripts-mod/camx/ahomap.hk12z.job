@@ -46,7 +46,7 @@
 # Example: for August 1993 monthly ozone data,
 # Bday,Eday,TOMS file|930801,930831,ozcol_data/m3_aug93.mon
 #
-source ../../../../domains_def.config
+source ../../../camx_run.config
 
 set BEG_DATE = $argv[1]
 set END_DATE = $argv[2]
@@ -75,7 +75,7 @@ ln -sf $CAMx_HOME/Raw_DATA/TOMs/L3_ozone_omi_${TOM_GDATE}.txt L3_ozone_omi_${TOM
 
 $cwd/../src/ahomap.linux << EOF >& ../msg/log.ahomap.$CUR_JDATE.${DOMAINS_RES}km
 Coordinate project |$MAP_PROJECTION
-xorg,yorg,izone    |${XCRO_AQMS_Dx[$DOMAINS_GRID]},${YCRO_AQMS_Dx[$DOMAINS_GRID]},$LAMBERT_CEN_LON,$LAMBERT_CEN_LAT,$LAMBERT_TRUE_LAT1,$LAMBERT_TRUE_LAT1
+xorg,yorg,izone    |${XCRO_AQMS_Dx[$DOMAINS_GRID]},${YCRO_AQMS_Dx[$DOMAINS_GRID]},$LAMBERT_CEN_LON,$LAMBERT_CEN_LAT,$LAMBERT_TRUE_LAT1,$LAMBERT_TRUE_LAT2
 dx,dy              |${DOMAINS_RES},${DOMAINS_RES}
 Output filename    |ahomap.hk.${CUR_GDATE}.${DOMAINS_RES}km
 Process for snow?  |.false.

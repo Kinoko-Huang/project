@@ -6,7 +6,7 @@
 # inventory of IDA formatted pollutant sources,
 # you should set the basic parameters as below. 
 # Good Luck!
-#               Last Modified on  2016-10-31
+#               Last Modified on  2016-11-03
 #-----------------------------------------------
 
 #--------------User defined parameters--------------
@@ -14,14 +14,13 @@
 inv_type='ARINV'
 
 # Inventory file path
-#inv_path='/disk/hq233/huangyeq/forecast-test/smoke/cmaq/Smoke37.combine.v1/data/inventory/2005/mobile/pathv1_hk_mobile.txt'
-inv_path='/disk/hq233/huangyeq/forecast-test/smoke/cmaq/Smoke37.combine.v1/data/inventory/2005/area/area_hk_2005_09Feb2009.ida_nonmarine_nonshipline'
+inv_path='../data/obv/2005/mobile/pathv1_hk_mobile.txt'
 
 # Producing Pollutant ID [list style]
 pt_ids=[2, 5, 6, 7]
 
 # Scaling factor [list or number]
-scale_f=0.2
+scale_f=0.5
 
 # Output file path
 fn_plt_str=''
@@ -29,8 +28,8 @@ for mdf_plt in pt_ids:
     fn_plt_str='%s%s' % (fn_plt_str,mdf_plt) 
 fn_plt_str='pol%s' % fn_plt_str
 
-#opt_path='./pathv1_hk_mobile-%s-%dpt2.txt' % (fn_plt_str,scale_f*100)
-opt_path='./area_test-%s-%dpt2.txt' % (fn_plt_str,scale_f*100)
+opt_path='../data/obv/2005/mobile/pathv1_hk_mobile-%s-%dpt2.txt' % (fn_plt_str,scale_f*100)
+
 
 #---------------Parameter setting----------------------
 if inv_type == 'ARINV':
@@ -81,7 +80,10 @@ for item in lines:
             p_org_line=pt_pos+p_length
             #print info_line
         item_rec=item_rec+item[p_org_line:]
-        fw.write(item_rec)
+        if item_rec[-1]=='\n':
+            fw.write(item_rec)
+        else:
+            fw.write(item_rec+'\n')
 
 print '%s written!' % opt_path 
 fr.close()

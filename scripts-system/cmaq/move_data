@@ -1,0 +1,51 @@
+#!/bin/sh
+#
+#
+CTM_SAVE_OUTPUT=1
+MYDIR=`/usr/bin/dirname $0`
+cd $MYDIR || {
+  echo "Failed to change to directory $MYDIR"
+  exit 1
+}
+MYDIR=`/bin/pwd`
+
+CMAQ_BUFFER=$MYDIR/outputs/run.OP_mm5_cb05cl
+
+if [ $# -eq 1 ]; then
+  TargetDir=$1
+else
+  echo "Usage: $0 target_directory"
+  echo " e.g.: $0 /home/pathop/cmaq_output/2007010100"
+  exit 1
+fi
+
+if [ $CTM_SAVE_OUTPUT -eq 0 ]; then
+  echo "Data in $CMAQ_BUFFER is not saved to $TargetDir"
+  exit 0
+fi
+
+if [ -d $TargetDir ]; then
+  if [ $CTM_CLEAN_OUTPUT -eq 1 ]; then
+    echo "Target directory $TargetDir already exists, remove it."
+    /bin/rm -r -f $TargetDir
+  fi
+fi
+
+/bin/mkdir -p $TargetDir || {
+  echo "Failed to create target directory $TargetDir"
+  exit 1
+}
+
+/usr/bin/rsync -av $CMAQ_BUFFER/ $TargetDir/ || {
+  echo "Failed to copy data to directory $TargetDir"
+  exit 1
+}
+
+echo "CCTM_V5g_ebi_cb05cl_ae5_aq_mpich2" > $TargetDir/.prefix
+
+if [ $DAY1FIXED -eq 1 ]; then
+  /bin/touch $TargetDir/.day1fixed
+  echo $TargetDir/.day1fixed created
+fi
+
+exit 0

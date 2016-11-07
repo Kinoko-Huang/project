@@ -1,0 +1,31 @@
+#!/bin/sh
+
+if [ $CTM_CLEAN_OUTPUT -eq 0 ]; then
+  echo "Cleanup is disabled"
+  exit 0
+fi
+
+MYDIR=`/bin/pwd`
+
+for d in $G_DOMAINS_RES_CMAQ
+do
+  echo Cleanup $MYDIR/inputs/met/${d}km
+  /usr/bin/find $MYDIR/inputs/met/${d}km -type l -exec /bin/rm {} \;
+
+  echo Cleanup $MYDIR/inputs/emiss/${d}km
+  /usr/bin/find $MYDIR/inputs/emiss/${d}km -type f -exec /bin/rm {} \;
+
+  echo Cleanup $MYDIR/inputs/icbc/${d}km
+  /usr/bin/find $MYDIR/inputs/icbc/${d}km -type f -exec /bin/rm {} \;
+done
+
+echo Cleanup outputs
+/bin/rm -r -f outputs
+/bin/mkdir    outputs
+
+echo Cleanup inputs/jproc
+/bin/rm -r -f inputs/jproc
+/bin/mkdir    inputs/jproc
+
+echo Cleanup DONE
+exit 0

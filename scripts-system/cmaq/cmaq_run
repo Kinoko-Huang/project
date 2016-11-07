@@ -1,0 +1,117 @@
+#!/bin/sh
+#
+MYDIR=`/usr/bin/dirname $0`
+cd $MYDIR || exit 1
+MYDIR=`/bin/pwd`
+MYNAME=`/bin/basename $0`
+
+ECHO="echo LOG:${MYNAME}:"
+
+source $MYDIR/cmaq_run.config
+if [ -z "$MPICH2BIN" ]; then
+  $ECHO "MPICH2BIN is not set"
+  exit 1
+fi
+
+MCIP_DIR=$DATA_MCIP_OUTPUT
+OUTPUT_DIR=$DATA_CMAQ_OUTPUT
+
+if [ $# -eq 1 ]; then
+  INIT_TIME=$1
+else
+  $ECHO "Usage: $0 YYYYMMDDhh"
+  $ECHO " e.g.: $0 2007090200"
+  exit 1
+fi
+
+$PATH_SYSDIR/bin/check_yyyymmddhh ${INIT_TIME} || {
+  $ECHO "Invalid Initial time $INIT_TIME"
+  exit 1
+}
+
+if [ ! -e $MCIP_DIR ]; then
+  $ECHO "Input mcip directory $MCIP_DIR does not exist"
+  exit 1
+fi
+
+export PATH=$MYDIR/utils/datelib:$PATH
+export MY_OUTPUT=$MYDIR/outputs
+
+$ECHO "CMAQ Initial Time = $INIT_TIME, My directory = $MYDIR"
+
+./cleanup
+
+if [ $CTM_COLD_START -eq 0 -a $CTM_CLEAN_OUTPUT -eq 1 ]; then
+  ./find_day0 $INIT_TIME
+  stat=$?
+  if [ $stat -eq 1 ]; then
+    $ECHO "Failed to run ./find_day0 $INIT_TIME"
+    exit 1
+  elif [ $stat -eq 2 ]; then
+    $ECHO "WARNING: Cannot find day0 CMAQ output files $INIT_TIME"
+    export CTM_COLD_START=1
+    $ECHO "WARNING: Force the CMAQ run to cold start, CTM_COLD_START=${CTM_COLD_START}"
+  fi
+fi
+
+Ncpu=`$PATH_SYSDIR/bin/mpi_total_cpus` || {
+  $ECHO "Failed to run $PATH_SYSDIR/bin/mpi_total_cpus"
+  exit 1
+}
+
+#/bin/cp ${MPIHostFile} $MYDIR/runfiles/runfiles/nodes  || {
+#  $ECHO "Failed to copy ${MPIHostFile} to $MYDIR/runfiles/runfiles/nodes"
+#  exit 1
+#  }
+
+export NPROCS="$Ncpu"
+NPROW=${NPROW-2}
+let "NPCOL = NPROCS / $NPROW"
+export NPCOL_NPROW="$NPCOL $NPROW"
+
+if [ $CTM_USE_SMOKE -eq 0 ]; then
+  # Pick emission data from pre-generated data
+  export PICKEMIS=1
+else
+  # Copy data from SMOKE output
+  export PICKEMIS=0
+fi
+
+$ECHO "PICKEMIS=$PICKEMIS"
+if [ $PICKEMIS -eq 0 ]; then
+  # Copy emission data from $PATH_DATADIR/smoke/... to inputs/emiss/*
+  FromEmissData=$DATA_SMOKE_OUTPUT/${INIT_TIME:0:4}/${INIT_TIME:0:6}/${INIT_TIME}/cmaq
+  if [ ! -e $FromEmissData ]; then
+    $ECHO "CTM_USE_SMOKE=${CTM_USE_SMOKE}. No input emission data found in $FromEmissData"
+    exit 1
+  fi
+  $ECHO "Copy emission data from $FromEmissData"
+  /usr/bin/rsync -av $FromEmissData/ inputs/emiss/ || {
+    $ECHO "Failed to run /usr/bin/rsync -av $FromEmissData/ inputs/emiss/"
+    exit 1
+  }
+fi
+
+export M3HOME=$MYDIR/src
+$ECHO "M3HOME set to $M3HOME"
+
+$ECHO ./Whole_OP.csh $INIT_TIME $MCIP_DIR
+./Whole_OP.csh $INIT_TIME $MCIP_DIR
+if [ $? -ne 0 ]; then
+  $ECHO "Failed to run ./Whole_OP.csh $INIT_TIME $MCIP_DIR"
+  exit 1
+fi
+
+$ECHO ./check_output $INIT_TIME
+./check_output $INIT_TIME || {
+  $ECHO "Failed to run ./check_output $INIT_TIME"
+  exit 1
+}
+
+$ECHO ./move_data ${OUTPUT_DIR}/${INIT_TIME:0:4}/${INIT_TIME:0:6}/${INIT_TIME}
+./move_data ${OUTPUT_DIR}/${INIT_TIME:0:4}/${INIT_TIME:0:6}/${INIT_TIME} || {
+  $ECHO "Failed to run ./move_data ${OUTPUT_DIR}/${INIT_TIME:0:4}/${INIT_TIME:0:6}/${INIT_TIME}"
+  exit 1
+}
+
+exit 0

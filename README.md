@@ -1,2 +1,2 @@
 # project
-All projects commit in HKUST
+All projects done in the HKUST
